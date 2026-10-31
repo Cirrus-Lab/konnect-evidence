@@ -81,8 +81,12 @@ If connection fails:
    - Expect some noise right after a sync. Field mismatches (Description,
      Datasheet, custom fields such as MPN) appear because the sync carries
      pad nets but not every symbol field. Library-mismatch warnings appear on
-     footprints placed over IPC. Clearance errors come from the parts staged
-     in a stack beside the board. None of these mean the sync failed.
+     footprints placed over IPC. None of these mean the sync failed.
+   - Read every clearance error's two items before blaming the staging
+     stack. Errors between two pads of the *same* footprint (fine-pitch
+     MSOP/VSSOP/0201 pads 0.15 mm apart against KiCad's default 0.2 mm
+     clearance) survive placement: they are a design-rule setting, fixed by
+     setting clearance to the fab's capability, not by moving parts.
    - A BOM-attribute mismatch is real: the library footprint (test points,
      Tag-Connect pads, solder jumpers, bare cable pads) is excluded from the
      BOM while the symbol is not. Fix the schematic symbol, not the board.
@@ -104,6 +108,23 @@ If connection fails:
    - If the datasheet names a different case style from the design document,
      record the correction as a decision.
    - Never estimate a pad from a photo or a similar part.
+6. **Place from a written plan, then apply it in one batch.**
+   - Read each footprint's courtyard from the board file, not from the
+     design document: a document's placement figure often uses estimated or
+     body-only boxes, and real courtyards (gull-wing pad rows, clips holding a
+     rod) are larger, so parts drawn touching in the figure overlap on the
+     board.
+   - Check where each footprint's origin is. Most are centred, but connector
+     and wire-pad footprints often put the origin on pad 1, so a part placed
+     by its drawn centre lands half its length off.
+   - Write the target positions as a script that checks courtyard overlaps,
+     edge clearance and keep-out areas before any tool call. Apply them with
+     one `set_component_placements` call (one undo step), then
+     `save_project`.
+   - Verify with `score_placement` (verdict and decoupling distances) and a
+     KiCad DRC run. Re-check every distance rule from the design document
+     against the real courtyards; a rule that passed on estimated boxes can
+     fail on real ones.
 
 ---
 

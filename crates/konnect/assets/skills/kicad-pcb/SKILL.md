@@ -75,6 +75,20 @@ If connection fails:
    KiCad undo commit (Ctrl+Z reverses all of it). It lives only in the editor
    until you call `save_project`; afterwards, check that the file on disk
    contains the footprints.
+   - Prove the sync with a DRC run that includes schematic parity
+     (`kicad-cli pcb drc --schematic-parity --format json`). Missing or extra
+     footprints and net mismatches are real failures.
+   - Expect some noise right after a sync. Field mismatches (Description,
+     Datasheet, custom fields such as MPN) appear because the sync carries
+     pad nets but not every symbol field. Library-mismatch warnings appear on
+     footprints placed over IPC. Clearance errors come from the parts staged
+     in a stack beside the board. None of these mean the sync failed.
+   - A BOM-attribute mismatch is real: the library footprint (test points,
+     Tag-Connect pads, solder jumpers, bare cable pads) is excluded from the
+     BOM while the symbol is not. Fix the schematic symbol, not the board.
+   - When parts are added in a later sync (footprints built after the first
+     one), the dry run lists only those parts as additions; the placed parts
+     are left where they are.
 4. **Keep design rules out of the live session.**
    - `set_design_rules` and `set_predefined_sizes` write `.kicad_pro`.
      `set_design_rules` refuses while the board is open, and an open KiCad

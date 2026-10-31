@@ -287,6 +287,12 @@ create_footprint(
 - Extend courtyard **0.25mm** beyond the outermost pad edges on all sides
 - This ensures minimum spacing between components during assembly
 - Use `F.CrtYd` layer, 0.05mm line width
+- When the body is larger than the pads (a part whose body overhangs its pads, or a clip that holds a rod or fuse wider than its pad), extend the courtyard 0.25mm beyond the body or the held part instead
+
+**Check what `create_footprint` drew.** It sizes the courtyard from the pad envelope only, even when `body_width` and `body_height` are larger, and it puts the silkscreen outline about 0.15mm off the pad edges. After creating a footprint:
+
+1. Read it back with `get_footprint_info` (`include_graphics`: true) and compare the F.CrtYd rectangle with the body.
+2. Replace F.CrtYd and F.SilkS with `set_footprint_graphics` (`mode`: "replace", `selector`: the layer) when the courtyard is smaller than the body or silk lines run close to pads. Keep silk off pads: draw only the body segments clear of copper, and put the pin-1 dot outside the pad row.
 
 ### Footprint Layers
 

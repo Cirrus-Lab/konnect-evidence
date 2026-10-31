@@ -61,11 +61,19 @@ impl effects::ArgView for JsonArgs<'_> {
 }
 
 /// Path-like string arguments, top level and inside top-level arrays.
+///
+/// URLs (a symbol's `datasheet`) are not files. Relative paths and
+/// `${KIPRJMOD}` paths are resolved the way the tool resolves them, against the
+/// directory of the call's absolute design path (the parent schematic, project
+/// or library), so edagov judges the file the tool will actually touch rather
+/// than resolving `power.kicad_sch` against its own working directory. `..` is
+/// kept, so a path that escapes the governed root is still refused; without an
+/// absolute anchor, relative paths are passed through unchanged.
 pub fn collect_paths(args: &Value) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
+    let mut raw: Vec<String> = Vec::new();
     let mut push = |s: &str| {
-        if bridge::looks_like_path(s) && !out.iter().any(|p| p == s) {
-            out.push(s.to_string());
+        if bridge::looks_like_path(s) && !s.contains("://") && !raw.iter().any(|p| p == s) {
+            raw.push(s.to_string());
         }
     };
     if let Some(map) = args.as_object() {
@@ -81,6 +89,37 @@ pub fn collect_paths(args: &Value) -> Vec<String> {
                 }
                 _ => {}
             }
+        }
+    }
+    let anchor = raw
+        .iter()
+        .map(std::path::Path::new)
+        .find(|p| p.is_absolute())
+        .and_then(|p| {
+            if p.extension().is_some() {
+                p.parent().map(std::path::Path::to_path_buf)
+            } else {
+                Some(p.to_path_buf())
+            }
+        });
+    let mut out: Vec<String> = Vec::new();
+    for s in raw {
+        let resolved = match &anchor {
+            Some(dir) => {
+                if let Some(rest) = s.strip_prefix("${KIPRJMOD}") {
+                    dir.join(rest.trim_start_matches(['/', '\\']))
+                        .to_string_lossy()
+                        .into_owned()
+                } else if std::path::Path::new(&s).is_relative() {
+                    dir.join(&s).to_string_lossy().into_owned()
+                } else {
+                    s
+                }
+            }
+            None => s,
+        };
+        if !out.contains(&resolved) {
+            out.push(resolved);
         }
     }
     out
@@ -265,6 +304,42 @@ mod tests {
         assert!(p.contains(&"/tmp/a/x.kicad_sch".to_string()));
         assert!(p.contains(&"/tmp/a/y.kicad_pcb".to_string()));
         assert!(!p.iter().any(|s| s == "R1" || s == "GND"));
+    }
+
+    #[test]
+    fn relative_and_kiprjmod_paths_resolve_against_the_call_and_urls_are_skipped() {
+        let dir = std::env::temp_dir().join("konnect-paths").join("kicad");
+        let parent = dir.join("root.kicad_sch");
+        let p = collect_paths(&json!({
+            "schematic": parent.to_string_lossy(),
+            "sheet_file": "power.kicad_sch",
+            "datasheet": "https://www.ti.com/lit/ds/symlink/tps7a16.pdf",
+        }));
+        assert!(
+            p.contains(&dir.join("power.kicad_sch").to_string_lossy().into_owned()),
+            "{p:?}"
+        );
+        assert!(!p.iter().any(|s| s.contains("://")), "{p:?}");
+
+        let project = dir.join("soil.kicad_pro");
+        let p = collect_paths(&json!({
+            "project": project.to_string_lossy(),
+            "library_path": "${KIPRJMOD}/lib/soil.kicad_sym",
+        }));
+        assert!(
+            p.contains(
+                &dir.join("lib/soil.kicad_sym")
+                    .to_string_lossy()
+                    .into_owned()
+            ),
+            "{p:?}"
+        );
+
+        // No absolute anchor: relative paths are passed through unchanged (and judged strictly).
+        assert_eq!(
+            collect_paths(&json!({ "sheet_file": "power.kicad_sch" })),
+            vec!["power.kicad_sch"]
+        );
     }
 
     #[test]

@@ -48,6 +48,48 @@ If connection fails:
 - Tell the user to open KiCAD and load the project
 - The board (.kicad_pcb) must be open in the PCB editor
 - KiCAD's IPC API must be enabled (default in KiCAD 8+)
+- On Windows the API is often off, and Konnect only looks for the endpoint when
+  it starts. See the `eda-toolchain-setup` skill: enable the API, then restart
+  the MCP client.
+
+### Starting a board from the schematic (field notes, KiCad 10.0.8)
+
+1. **Set up the board while it is closed.** `add_layer` and
+   `add_board_outline` edit the saved file when no KiCad holds the board, so
+   set the copper layers and the Edge.Cuts outline before the user opens the
+   board. Use a plain rectangle (no rounded corners): `score_placement` can
+   only prove containment against an axis-aligned rectangle.
+2. **Have the user open the board in the PCB editor, then dry-run the sync.**
+   `update_pcb_from_schematic` only applies to a live board.
+   - A `GetOpenDocuments … AS_UNHANDLED` error straight after opening means
+     the editor is still registering; retry once.
+   - Symbols with no footprint are reported as unassigned and do not block the
+     sync.
+   - A footprint with custom-shape pads (for example
+     `Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm`) cannot be placed
+     through KiCad 10's typed IPC path. That conflict blocks the whole plan.
+     Swap to the rectangular-pad variant with the same pitch and pads
+     (`…_Open_Pad1.0x1.5mm`) through a schematic edit, then dry-run again.
+3. **Apply with the dry run's revision as `expected_plan_revision`, then
+   save.** The apply is a single
+   KiCad undo commit (Ctrl+Z reverses all of it). It lives only in the editor
+   until you call `save_project`; afterwards, check that the file on disk
+   contains the footprints.
+4. **Keep design rules out of the live session.**
+   - `set_design_rules` and `set_predefined_sizes` write `.kicad_pro`.
+     `set_design_rules` refuses while the board is open, and an open KiCad
+     project manager can rewrite `.kicad_pro` from memory on close.
+   - Set them with KiCad fully closed, or put constraints in the project's
+     custom DRC rules file with `set_layer_constraints`; KiCad reads that file
+     at DRC time.
+5. **Build missing footprints only from the manufacturer's drawing.**
+   - Render the PDF page and read every dimension from the image; a
+     dimension-letter table without its drawing is ambiguous.
+   - Record the drawing's document number and revision in the footprint
+     description.
+   - If the datasheet names a different case style from the design document,
+     record the correction as a decision.
+   - Never estimate a pad from a photo or a similar part.
 
 ---
 

@@ -32,6 +32,19 @@ The `konnect` MCP server is this repository's Rust workspace (fork of Konnect wi
 
 Enable KiCad's IPC API (Preferences → Plugins → Enable IPC API) for live board tools. Run `konnect status` to confirm the build and `konnect init --client claude` only if you also want Konnect's skills installed outside this plugin.
 
+Making the IPC API work on Windows:
+
+- **Which setting.** The Plugins page also has a Python interpreter field, which does not enable the API. Confirm the API itself is on: `%APPDATA%\kicad\10.0\kicad_common.json` must contain `"api": {"enable_server": true}`.
+- **What the endpoint is.** It is a named pipe, `\\.\pipe\<TEMP>\kicad\api.sock`, and no file exists at that path. List KiCad's pipe with `[System.IO.Directory]::GetFiles('\\.\pipe\') | Where-Object { $_ -match 'kicad' }`.
+- **Restart after enabling.** Konnect looks for the endpoint once, at startup. After enabling the API, restart the MCP client (or reconnect the `konnect` server); `check_kicad_ui` then reports `ipc_responsive: true`.
+- **Retry once after opening the PCB editor.** For a few seconds after the editor opens, live tools can fail with `GetOpenDocuments … AS_UNHANDLED`, because the editor has not finished registering. Retry once before treating it as a configuration fault.
+
+Building from source on Windows:
+
+- Build from PowerShell (Developer PowerShell for MSVC). `nng-sys`'s CMake step fails under Git Bash in a fresh target directory.
+- Put the target directory outside cloud-synced folders, for example `CARGO_TARGET_DIR=C:\Users\<you>\.cargo-target\konnect`. Google Drive and OneDrive lock build outputs, which fails the link step with `LNK1104`.
+- A release build needs several GB free.
+
 The plugin's MCP configuration starts `konnect` with `KONNECT_GOVERNANCE=auto` and `KONNECT_EDAGOV` pointing at the bundled `governance/bin/edagov.py`. On Windows, Python must be reachable as `py` (python.org launcher) or set `KONNECT_PYTHON`. The edagov MCP server starts with `${EDAGOV_PYTHON:-python3}`, and on Windows `python3` is usually the Microsoft Store alias, so set the user environment variable `EDAGOV_PYTHON=py` there. Set `KONNECT_GOVERNANCE_ROOT` to the design repository so live-board tools without a path argument are governed too.
 
 ## 4. Install ngspice
@@ -54,7 +67,21 @@ LTspice and commercial simulators are not driven by edagov; run them yourself an
    `edagov doctor > toolchain.json`, then
    `edagov record evidence --path toolchain.json --artifact-kind configuration --tag toolchain --owner <user> --claim "Toolchain versions on <host> at <date>"`.
 
-## 6. CI runner
+## 6. Supporting tools agents need on the design side
+
+- **Design repository line endings.** edagov records SHA-256 hashes of design files and hash-chains its ledger, and `core.autocrlf=true` (the Git for Windows default) rewrites files on checkout. Before the first commit, add a `.gitattributes` containing `* -text`. If files were already committed, run `git add --renormalize .` and commit again.
+- **Reading manufacturer PDF drawings.**
+  - Web fetchers often cannot decode compressed PDFs.
+  - Land-pattern tables only make sense next to the drawing: extracted text gives values like `.310 (7.87)` but not which edge or pad each letter measures.
+  - With the user's consent, install PyMuPDF (`py -m pip install --user pymupdf`) and render the page: `pymupdf.open(pdf)[page].get_pixmap(dpi=200).save("page.png")`.
+  - Read dimensions only from the rendered drawing; never estimate a footprint dimension.
+- **Python flags on Windows.** `py -I` (isolated mode) also disables the user site-packages, so a `--user` install is invisible to it. Use `py -P` instead: it still keeps the script's directory off `sys.path`, which is what matters when the script reads downloaded files.
+- **Sites that refuse automated clients.**
+  - keyelco.com returns 403 to fetchers, and mouser.com blocks automated browsers.
+  - Do not spoof a browser user agent or otherwise get around a bot check. Ask the user to download the file and point you at it.
+  - Opening such a PDF link in the built-in browser shows the user a save dialog; tell them what it is.
+
+## 7. CI runner
 
 The design-repo template `governance/ci/design-repo/.github/workflows/eda-evidence.yml` installs KiCad from the PPA and ngspice from apt on `ubuntu-24.04`, then prints `edagov doctor` into the job log. In the design repository give the CI actor only the `contributor` role. Pin the runner image; PPA packages move, so each run records the installed version.
 

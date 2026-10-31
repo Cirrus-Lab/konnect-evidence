@@ -60,6 +60,24 @@ impl effects::ArgView for JsonArgs<'_> {
     }
 }
 
+/// Arguments that carry KiCad identifiers or free text, never a file to open.
+/// A sub-sheet net is named "/Sheet name/NET" and a value or label may hold a
+/// slash, so their shape alone would make them look like paths.
+const NON_PATH_KEYS: &[&str] = &[
+    "net",
+    "net_name",
+    "nets",
+    "to_net",
+    "power_net",
+    "net_pos",
+    "net_neg",
+    "netclass",
+    "label",
+    "labels",
+    "text",
+    "value",
+];
+
 /// Path-like string arguments, top level and inside top-level arrays.
 pub fn collect_paths(args: &Value) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
@@ -69,7 +87,10 @@ pub fn collect_paths(args: &Value) -> Vec<String> {
         }
     };
     if let Some(map) = args.as_object() {
-        for value in map.values() {
+        for (key, value) in map {
+            if NON_PATH_KEYS.contains(&key.as_str()) {
+                continue;
+            }
             match value {
                 Value::String(s) => push(s),
                 Value::Array(items) => {
@@ -265,6 +286,22 @@ mod tests {
         assert!(p.contains(&"/tmp/a/x.kicad_sch".to_string()));
         assert!(p.contains(&"/tmp/a/y.kicad_pcb".to_string()));
         assert!(!p.iter().any(|s| s == "R1" || s == "GND"));
+    }
+
+    #[test]
+    fn hierarchical_net_names_and_text_are_not_paths() {
+        // A sub-sheet net is "/Sheet name/NET": path-shaped, but never opened as a file.
+        let args = json!({
+            "board": "/tmp/a/x.kicad_pcb",
+            "net_name": "/RF synthesis, measurement node and rod clips/ROD_E1",
+            "net": "/Power/VIN_RAW",
+            "nets": ["/Power/SHLD", "GND"],
+            "to_net": "/Power/VIN_PROT",
+            "text": "TX/RX",
+            "value": "10k 1%/0.1W",
+            "netclass": "RF"
+        });
+        assert_eq!(collect_paths(&args), vec!["/tmp/a/x.kicad_pcb".to_string()]);
     }
 
     #[test]

@@ -1,0 +1,12 @@
+Circuit: buck demo rev b - switching transient, ideal switch (attempt 1)
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Initial Transient Solution
+--------------------------
+Warning: singular matrix:  check node sw
+
+doAnalyses: TRAN:  Timestep too small; time = 1.30007e-05, timestep = 1.25e-19: trouble with node "sw"
+
+tran simulation(s) aborted
+ngspice-44.2 done

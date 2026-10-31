@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# Run the bundled toolkit without installing it: bin/edagov <command> ...
+HERE="$(cd "$(dirname "$0")/.." && pwd)"
+PYTHONPATH="$HERE/src${PYTHONPATH:+:$PYTHONPATH}" exec "${PYTHON:-python3}" -m edagov "$@"

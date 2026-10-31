@@ -104,6 +104,110 @@ pub const SKILLS: &[SkillManifest] = &[
         content: include_str!("../assets/skills/kicad-library/SKILL.md"),
         references: &[],
     },
+    // Evidence-governance skills (Konnect-Evidence fork). Their sources live at
+    // the repository's top-level `skills/` so the Claude plugin and `konnect
+    // init` install the same files.
+    SkillManifest {
+        name: "eda-kicad-cloud-evidence-governance",
+        content: include_str!("../../../skills/eda-kicad-cloud-evidence-governance/SKILL.md"),
+        references: &[
+            (
+                "bom-sourcing.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/bom-sourcing.md"),
+            ),
+            (
+                "cloud-reproducibility.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/cloud-reproducibility.md"),
+            ),
+            (
+                "dashboard-review-ux.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/dashboard-review-ux.md"),
+            ),
+            (
+                "edagov-cli.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/edagov-cli.md"),
+            ),
+            (
+                "evidence-schema.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/evidence-schema.md"),
+            ),
+            (
+                "git-review-traceability.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/git-review-traceability.md"),
+            ),
+            (
+                "kicad-project-and-library.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/kicad-project-and-library.md"),
+            ),
+            (
+                "konnect-integration.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/konnect-integration.md"),
+            ),
+            (
+                "manufacturing-release.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/manufacturing-release.md"),
+            ),
+            (
+                "mcp-safe-connectors.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/mcp-safe-connectors.md"),
+            ),
+            (
+                "pcb-integrity.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/pcb-integrity.md"),
+            ),
+            (
+                "quality-gates.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/quality-gates.md"),
+            ),
+            (
+                "source-register.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/source-register.md"),
+            ),
+            (
+                "spice-validation.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/spice-validation.md"),
+            ),
+            (
+                "templates/design-record.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/templates/design-record.md"),
+            ),
+            (
+                "templates/evidence-index.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/templates/evidence-index.md"),
+            ),
+            (
+                "templates/issue-exception.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/templates/issue-exception.md"),
+            ),
+            (
+                "templates/release-manifest.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/templates/release-manifest.md"),
+            ),
+            (
+                "templates/review-decision.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/templates/review-decision.md"),
+            ),
+            (
+                "templates/simulation-run.md",
+                include_str!("../../../skills/eda-kicad-cloud-evidence-governance/references/templates/simulation-run.md"),
+            ),
+        ],
+    },
+    SkillManifest {
+        name: "governed-design-editing",
+        content: include_str!("../../../skills/governed-design-editing/SKILL.md"),
+        references: &[],
+    },
+    SkillManifest {
+        name: "eda-review-dashboard",
+        content: include_str!("../../../skills/eda-review-dashboard/SKILL.md"),
+        references: &[],
+    },
+    SkillManifest {
+        name: "eda-toolchain-setup",
+        content: include_str!("../../../skills/eda-toolchain-setup/SKILL.md"),
+        references: &[],
+    },
 ];
 
 // ─── Agents ──────────────────────────────────────────────────────────────────

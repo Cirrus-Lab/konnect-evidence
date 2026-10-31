@@ -1,0 +1,9 @@
+Internal Item,References,Qty,Manufacturer,MPN,Description,Package,Lifecycle,Lifecycle Source,Lifecycle Date,Approved Source,Alternate State,Alternate For,Equivalence Matrix,Qualification Evidence,Risk,DNP
+EH-1001,C1,1,Murata,GRM31CR71E106KA12L,10uF 25V X7R,1206,Active,Murata product page,2026-10-02,DigiKey,,,,,low,
+EH-1002,C2,1,Murata,GRM32ER61C476ME15L,47uF 16V X5R,1210,Active,Murata product page,2026-10-02,DigiKey,,,,,low,
+EH-1003,L1,1,Coilcraft,XAL5050-472MEB,4.7uH 5A shielded,XAL5050,Active,Coilcraft lifecycle page,2026-04-02,Coilcraft direct,,,,,medium,
+EH-1004,"R1",1,Yageo,RC0603FR-0731K6L,31.6k 1% 0603,0603,Active,Yageo PCN portal,2026-09-15,Mouser,,,,,low,
+EH-1005,R2,1,Yageo,RC0603FR-0710KL,10k 1% 0603,0603,Active,Yageo PCN portal,2026-09-15,Mouser,,,,,low,
+EH-2001,U1,1,Texas Instruments,TPS54360BDDAR,60V 3.5A buck converter,SO-8 PowerPAD,Active,TI product folder,2026-10-10,TI store,,,,,medium,
+EH-2001-ALT,,0,Monolithic Power Systems,MP2459GJ-Z,Drop-in replacement for TPS54360B,TSOT-23-6,Active,MPS product page,2026-10-10,Broker - OpenParts Exchange,production_approved,EH-2001,,,high,yes
+EH-3001,J1,1,JST,TBD,4-pin power input,XH 2.5mm,,,,,,,,,medium,

@@ -378,7 +378,18 @@ impl McpHandler {
             if let Err(error) = tool_def.input_validator.validate(args) {
                 return schema_argument_error(&error);
             }
-            return match (tool_def.handler)(args, self.ctx.clone()).await {
+            // Evidence governance: classify the call by effect and, for a
+            // design write in a governed design, require an approved change
+            // window before the handler may touch anything (see `governance`).
+            let toolset = self.ctx.router.find_toolset_for_tool(name);
+            let ticket = match crate::governance::pre_call(name, toolset, args).await {
+                crate::governance::PreCall::Proceed(ticket) => ticket,
+                crate::governance::PreCall::Refuse(result) => {
+                    let error_kind = extract_error_kind(&result);
+                    return (result, CallStatus::Error, error_kind);
+                }
+            };
+            let outcome = match (tool_def.handler)(args, self.ctx.clone()).await {
                 Ok(result) => {
                     let status = call_status(&result);
                     // Structured errors carry their own kind in the body; plain-text
@@ -458,6 +469,8 @@ impl McpHandler {
                     )
                 }
             };
+            crate::governance::post_call(ticket, &outcome.0, outcome.1 == CallStatus::Ok).await;
+            return outcome;
         }
 
         // Not loaded — try to give an actionable hint.

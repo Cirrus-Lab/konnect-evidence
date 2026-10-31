@@ -1,0 +1,70 @@
+# Copy into your design repository (with the PR template and CODEOWNERS example).
+# Requires the plugin repository to be reachable; set EDAGOV_REPO to its owner/name.
+name: eda-evidence
+on:
+  pull_request:
+    branches: [develop, main, "release/**", "hotfix/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: read
+env:
+  EDAGOV_REPO: your-org/konnect-evidence       # <- this fork (holds governance/)
+  EDAGOV_REF: v0.1.0                            # <- pin a tag or commit, never a moving branch
+  KICAD_PROJECT: hardware/kicad                 # <- folder holding the .kicad_pro
+jobs:
+  edagov-gates:
+    runs-on: ubuntu-24.04
+    env:
+      EDAGOV_EXECUTION: "allow:ci pull request ${{ github.event.pull_request.number }}"
+      EDAGOV_ACTOR: "ci@github-actions"
+      EDAGOV_CORRELATION_ID: "gh-${{ github.run_id }}-${{ github.run_attempt }}"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.EDAGOV_REPO }}
+          ref: ${{ env.EDAGOV_REF }}
+          path: .edagov-toolkit
+      - name: Install KiCad 10 and ngspice
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-10.0-releases
+          sudo apt-get update
+          sudo apt-get install -y --install-recommends kicad ngspice xvfb
+      - name: Toolchain
+        run: .edagov-toolkit/governance/bin/edagov doctor
+      - name: Inventory, ERC, DRC (executed; recorded with provenance)
+        run: |
+          E=.edagov-toolkit/governance/bin/edagov
+          $E inventory --project "$KICAD_PROJECT" || true
+          xvfb-run -a $E run erc --project "$KICAD_PROJECT"
+          xvfb-run -a $E run drc --project "$KICAD_PROJECT"
+      - name: Claim lint of the PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n' "$PR_BODY" > pr_body.md
+          .edagov-toolkit/governance/bin/edagov lint-claims pr_body.md
+      - name: Secret scan
+        run: .edagov-toolkit/governance/bin/edagov scan-secrets .edagov docs || exit 1
+      - name: Gates
+        run: |
+          .edagov-toolkit/governance/bin/edagov gates --persist
+          .edagov-toolkit/governance/bin/edagov audit verify
+      - name: Dashboard
+        if: always()
+        run: .edagov-toolkit/governance/bin/edagov dashboard --out dashboard.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eda-evidence-${{ github.run_id }}
+          path: |
+            dashboard.html
+            .edagov
+      - name: Fail on blocked gates for release lanes
+        if: startsWith(github.base_ref, 'main') || startsWith(github.base_ref, 'release/')
+        run: .edagov-toolkit/governance/bin/edagov gates --fail-on-blocked
+# Notes
+# - Runs executed here are recorded under the CI actor, whose identity is unverified unless you set
+#   EDAGOV_ACTOR_VERIFIED_BY from a verified OIDC claim. Give ci@github-actions only the contributor role.
+# - The store changes made by CI are uploaded as an artifact, not pushed. A human commits evidence they accept.

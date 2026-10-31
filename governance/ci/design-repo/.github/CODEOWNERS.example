@@ -1,0 +1,10 @@
+# Rename to CODEOWNERS and replace teams. Enable "Require review from Code Owners" on protected branches.
+/hardware/kicad/*.kicad_sch        @your-org/schematic-reviewers
+/hardware/kicad/*.kicad_pcb        @your-org/layout-reviewers
+/hardware/kicad/*.kicad_dru        @your-org/layout-reviewers
+/hardware/kicad/lib/               @your-org/librarians
+/hardware/bom/                     @your-org/supply-reviewers
+/hardware/fab/                     @your-org/manufacturing-reviewers
+/.edagov/policy.json               @your-org/release-approvers
+/.edagov/roles.json                @your-org/release-approvers
+/.github/                          @your-org/release-approvers

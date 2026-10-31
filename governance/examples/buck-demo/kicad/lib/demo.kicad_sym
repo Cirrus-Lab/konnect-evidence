@@ -1,0 +1,12 @@
+(kicad_symbol_lib (version 20241209) (generator "kicad_symbol_editor") (generator_version "10.0")
+  (symbol "BUCK_CTRL" (in_bom yes) (on_board yes)
+    (property "Reference" "U" (at 0 0 0))
+    (property "Datasheet" "https://www.ti.com/lit/ds/symlink/tps54360b.pdf" (at 0 0 0))
+    (symbol "BUCK_CTRL_1_1"
+      (pin power_in line (at -7.62 2.54 0) (length 2.54) (name "VIN") (number "1"))
+      (pin output line (at 7.62 2.54 180) (length 2.54) (name "SW") (number "8"))
+      (pin input line (at -7.62 -2.54 0) (length 2.54) (name "FB") (number "5"))
+      (pin power_in line (at 0 -7.62 90) (length 2.54) (hide yes) (name "GND") (number "9"))
+    )
+  )
+)

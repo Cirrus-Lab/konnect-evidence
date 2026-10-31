@@ -1,0 +1,7 @@
+* Behavioural error amplifier, gm-type, vendor-independent placeholder
+* Pins: INP INN OUT
+.subckt EA INP INN OUT
+G1 0 OUT INP INN 1.2m
+RO OUT 0 4meg
+CO OUT 0 5p
+.ends EA

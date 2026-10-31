@@ -11,6 +11,15 @@ description: "Mandatory operating rules for ANY task involving KiCAD projects. L
 
 No exceptions for "small fixes," "just renaming a net," or "the user said it's fine."
 
+## Evidence Governance (Konnect-Evidence fork)
+
+A design with an `.edagov/` evidence store at or above its files is governed. In a governed design every design-changing tool runs only inside a change window that a person other than the requester approved; reads, dry runs, plans and UI actions are never blocked. Exports, configuration writes and network fetches run but are recorded.
+
+- Before editing a governed design, follow the `governed-design-editing` skill: request a window with the edagov server's window-request tool, wait for the user to report approval, edit, close the window, then re-run ERC/DRC through edagov.
+- A refusal with error kind `plan_blocked` and a governance reason is final for this call. Do not retry with another tool, edit the file directly, or ask the user to turn governance off.
+- Results of Konnect's checks and audits are saved as unreviewed evidence. They are not approvals; say so when you report them.
+- For evidence, gates and sign-off limits use the `eda-kicad-cloud-evidence-governance` skill.
+
 ## Protected Files — NEVER Edit Directly
 
 - `*.kicad_sch` — schematic sheets

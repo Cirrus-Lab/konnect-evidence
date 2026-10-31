@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+"""Schema-faithful stand-in for kicad-cli used by the test-suite.
+
+Behaviour is controlled by env vars:
+  FAKE_VIOLATIONS  number of active violations to report (default 0)
+  FAKE_EXIT        exit code to return when violations exist and --exit-code-violations is set (default 5)
+  FAKE_FORCE_EXIT  force this exit code regardless (simulates undocumented codes)
+"""
+import json, os, sys
+args = sys.argv[1:]
+if args[:1] == ["version"]:
+    print("10.0.0"); sys.exit(0)
+def opt(name):
+    return args[args.index(name) + 1] if name in args else None
+out = opt("--output")
+n = int(os.environ.get("FAKE_VIOLATIONS", "0"))
+viol = [{"type": "clearance", "severity": "error", "description": "Clearance violation",
+         "items": [{"uuid": "u1", "description": "Track", "pos": {"x": 1.0, "y": 2.0}}]} for _ in range(n)]
+base = {"$schema": "https://schemas.kicad.org/x.v1.json", "coordinate_units": "mm", "date": "2026-10-31T10:00:00+0000",
+        "kicad_version": "10.0.0", "source": os.path.basename(args[-1]), "included_severities": ["error", "warning"], "ignored_checks": []}
+if args[:2] == ["sch", "erc"]:
+    rep = dict(base, sheets=[{"path": "/", "uuid_path": "/x", "violations": viol}])
+elif args[:2] == ["pcb", "drc"]:
+    rep = dict(base, violations=viol, unconnected_items=[], schematic_parity=[])
+elif args[:2] in (["pcb", "export"], ["sch", "export"]):
+    if out.endswith(os.sep):
+        os.makedirs(out, exist_ok=True)
+        with open(os.path.join(out, "board-F_Cu.gbr"), "w") as fh:
+            fh.write("%TF.GenerationSoftware,KiCad,Pcbnew,10.0.0*%\n%TF.ProjectId,board,0000,B*%\n%TF.FileFunction,Copper,L1,Top*%\n%MOMM*%\nM02*\n")
+    else:
+        with open(out, "w") as fh:
+            fh.write("Ref,Val,Package,PosX,PosY,Rot,Side\nR1,10k,R_0603,1,1,0,top\n")
+    sys.exit(0)
+else:
+    print("unknown command", file=sys.stderr); sys.exit(1)
+with open(out, "w") as fh:
+    json.dump(rep, fh)
+if os.environ.get("FAKE_FORCE_EXIT"):
+    sys.exit(int(os.environ["FAKE_FORCE_EXIT"]))
+if "--exit-code-violations" in args and n:
+    sys.exit(int(os.environ.get("FAKE_EXIT", "5")))
+sys.exit(0)

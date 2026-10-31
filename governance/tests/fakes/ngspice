@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Stand-in for ngspice batch mode used by the test-suite."""
+import sys
+a = sys.argv[1:]
+if a == ["-v"]:
+    print("******\n** ngspice-44.2 : Circuit level simulation program\n******"); sys.exit(0)
+log = a[a.index("-o") + 1]; raw = a[a.index("-r") + 1]; net = a[-1]
+text = open(net).read()
+if "FAIL" in text:
+    open(log, "w").write("doAnalyses: TRAN:  Timestep too small; time = 1e-05\ntran simulation(s) aborted\n"); sys.exit(1)
+open(log, "w").write(("Warning: vsrc has no DC value\n" if "WARN" in text else "") + "No. of Data Rows : 100\nngspice-44.2 done\n")
+open(raw, "wb").write(b"Title: fake\n")
+sys.exit(0)

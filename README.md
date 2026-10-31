@@ -1,5 +1,43 @@
 <a name="top"></a>
 
+# Konnect-Evidence
+
+**A fork of [Konnect](https://github.com/mixelpixx/Konnect) (AGPL-3.0) that combines its KiCad MCP tools with the edagov evidence-governance toolkit.** Claude edits schematics and boards through Konnect; every design change in a governed design needs a change window approved by a second person, and every call is recorded in a hash-chained ledger tied to the design's evidence store, gates and review dashboard.
+
+> Upstream status: the original Konnect repository was scheduled for archival on 2026-10-25 and development moved to the closed-source Konnect-EDA. This fork is based on upstream commit `c7e87cd` (2026-10-24) and is maintained independently under the AGPL-3.0. See [FORK_NOTICE.md](FORK_NOTICE.md).
+
+### Install as a Claude plugin
+
+```
+/plugin install konnect-evidence --marketplace <owner>/<repo>
+```
+
+The plugin brings two MCP servers (`konnect` and `edagov`, see `.mcp.json`), Konnect's KiCad skills and agents, and four governance skills. It needs the `konnect` binary on PATH (release build or `cargo build --release -p konnect`), Python 3.10+ for edagov, and KiCad 10. The `eda-toolchain-setup` skill walks through it.
+
+### What the combination adds
+
+| Konnect alone | Konnect-Evidence |
+|---|---|
+| 228 design tools, any call runs | Every tool classified as read / plan / ui / output / config_write / external / design_write; design writes in a governed design run only inside an approved change window |
+| Call log (JSONL) | Hash-chained call ledger with before/after file hashes, anchored in the evidence store's audit chain |
+| ERC/DRC/audit verdicts returned to the chat | Verdicts captured as unreviewed evidence; gate-grade ERC/DRC/ngspice runs carry input hashes and provenance, and go stale automatically when Konnect edits the files |
+| No requirements, approvals or sign-offs | Requirements, architecture, 8 review gates, role-separated approvals bound to evidence, four manufacturing sign-offs, exceptions, snapshots and revision diffs |
+| — | `edagov` MCP server with 35 `gov_*` tools; human decisions stay on the CLI |
+
+Where things are:
+
+| Path | Contents |
+|---|---|
+| `crates/konnect-core/src/governance/` | Effect table for all 228 tools, edagov bridge, dispatch hooks |
+| `governance/` | edagov toolkit (Python, MIT-licensed originally), MCP server, tests, buck-converter demo, design-repo CI templates |
+| `skills/` | `eda-kicad-cloud-evidence-governance`, `governed-design-editing`, `eda-review-dashboard`, `eda-toolchain-setup` |
+| `docs/EVIDENCE_GOVERNANCE.md` | Architecture, modes, verification status |
+
+Everything below this line is the upstream Konnect README.
+
+---
+
+
 <div align="center">
 
 <img src="resources/images/KiCAD-MCP-Server-rust.svg" alt="KiCAD-MCP-Server Logo" height="240" />

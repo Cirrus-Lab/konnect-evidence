@@ -1,0 +1,62 @@
+# Konnect-Evidence: run edagov's execution paths against real KiCad 10 and
+# ngspice (the unit tests use schema-faithful fakes).
+name: governance-real-tools
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ["governance/**", ".github/workflows/governance-real-tools.yml"]
+permissions:
+  contents: read
+jobs:
+  real-tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EDAGOV_EXECUTION: "allow:ci real-tool validation"
+      EDAGOV_ACTOR: "ci@github-actions"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install KiCad 10 and ngspice
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-10.0-releases
+          sudo apt-get update
+          sudo apt-get install -y --install-recommends kicad ngspice xvfb
+      - name: Toolchain versions
+        run: governance/bin/edagov doctor | tee toolchain.json
+      - name: Demo store (documentation-only walkthrough)
+        run: sh governance/examples/buck-demo/build_demo.sh "$RUNNER_TEMP/demo"
+      - name: Executed runs on a KiCad-shipped demo project
+        run: |
+          set -x
+          W="$RUNNER_TEMP/real"; mkdir -p "$W"
+          DEMO=$(ls -d /usr/share/kicad/demos/*/ 2>/dev/null | head -1 || true)
+          if [ -z "$DEMO" ]; then echo "kicad demos not installed; skipping"; exit 0; fi
+          cp -R "$DEMO" "$W/proj"
+          export EDAGOV_ROOT="$W"
+          E=governance/bin/edagov
+          $E init --product PRD-CI --design DES-CI --board PCB-CI --revision CI \
+            --grant ci@github-actions=contributor --grant ci@github-actions=design_reviewer
+          $E inventory --project "$W/proj" || true
+          xvfb-run -a $E run erc --project "$W/proj" || true
+          xvfb-run -a $E run drc --project "$W/proj" || true
+          xvfb-run -a $E export gerbers --project "$W/proj" --out "$W/fab" || true
+          xvfb-run -a $E export drill --project "$W/proj" --out "$W/fab" || true
+          xvfb-run -a $E export pos --project "$W/proj" --out "$W/fab" || true
+          $E manifest --outputs "$W/fab" || true
+          $E --json gates > "$W/gates.json"
+          $E audit verify
+          $E dashboard --out "$W/dashboard.html"
+      - name: Executed ngspice run on the demo AC deck
+        run: |
+          export EDAGOV_ROOT="$RUNNER_TEMP/demo" EDAGOV_ACTOR=designer@example.com
+          governance/bin/edagov spice run "$RUNNER_TEMP/demo/sim/buck_loop_ac.cir"
+          governance/bin/edagov audit verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-tool-evidence
+          path: |
+            toolchain.json
+            ${{ runner.temp }}/real/.edagov
+            ${{ runner.temp }}/real/dashboard.html
+            ${{ runner.temp }}/demo/dashboard.html

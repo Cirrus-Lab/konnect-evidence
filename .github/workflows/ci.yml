@@ -61,6 +61,63 @@ jobs:
       - name: Test
         run: python -m unittest discover -s plugin/tests -v
 
+  # Konnect-Evidence: the edagov governance toolkit (Python) that the Rust
+  # dispatch hook talks to. Its tests include the change-window protocol the
+  # bridge relies on (`edagov konnect authorize|record --format kv`) and the
+  # stdio MCP server.
+  governance:
+    name: Governance (Python)
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install pytest
+      - name: Test
+        working-directory: governance
+        run: python -m pytest -q
+      - name: Secret scan
+        run: python governance/bin/edagov.py scan-secrets governance/src skills docs
+
+  # The pytest suite drives POSIX shell launchers and fake tools; on Windows,
+  # smoke-test the cross-platform `.py` launcher and the decision protocol
+  # the Rust bridge parses.
+  governance-windows:
+    name: Governance (Windows smoke)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Change-window round trip
+        shell: pwsh
+        run: |
+          $E = "governance/bin/edagov.py"
+          $D = Join-Path $env:RUNNER_TEMP "design"
+          Copy-Item -Recurse governance/examples/buck-demo/kicad (Join-Path $D "kicad")
+          $env:EDAGOV_ACTOR = "designer@example.com"
+          python $E --root $D init --product P --design D --board B --revision A --grant designer@example.com=contributor --grant reviewer@example.com=design_reviewer
+          $sch = Join-Path $D "kicad/buck-demo.kicad_sch"
+          $deny = python $E --root $D konnect authorize --tool add_wire --toolset sch_wiring --effect design_write --call-id W1 --path $sch --format kv
+          if (-not ($deny -match "^decision=deny")) { throw "expected deny: $deny" }
+          $req = python $E --root $D konnect window request --scope sch_wiring --reason "windows smoke"
+          $id = ([regex]::Match(($req -join "`n"), "id=(WIN-[A-Z0-9]+)")).Groups[1].Value
+          $env:EDAGOV_ACTOR = "reviewer@example.com"
+          python $E --root $D konnect window approve $id
+          $env:EDAGOV_ACTOR = "designer@example.com"
+          $allow = python $E --root $D konnect authorize --tool add_wire --toolset sch_wiring --effect design_write --call-id W2 --path $sch --format kv
+          if (-not ($allow -match "^decision=allow")) { throw "expected allow: $allow" }
+          python $E --root $D konnect ledger --verify
+          python $E --root $D audit verify
+
   # flake.nix pins its own toolchain, dependency set and build flags, so
   # nothing else in CI would notice it going stale — and it names things
   # that move: `-p konnect --bin konnect`, rust-toolchain.toml, and a

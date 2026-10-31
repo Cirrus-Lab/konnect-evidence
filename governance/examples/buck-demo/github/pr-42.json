@@ -1,0 +1,22 @@
+{
+  "repo": "example-hw/buck-demo",
+  "repository": {"default_branch": "main"},
+  "pull": {"number": 42, "title": "Rev B layout: move L1, widen SW copper",
+           "html_url": "https://github.com/example-hw/buck-demo/pull/42", "state": "open", "merged": false,
+           "base": {"ref": "develop"}, "head": {"ref": "feature/rev-b-layout", "sha": "c0ffee4200000000000000000000000000000002"},
+           "body": "Closes #17 (SW node clearance). Relates to #12.\n\nRisk: medium. Evidence: RUN-... (DRC), MFG-... (manifest)."},
+  "reviews": [
+    {"user": {"login": "layout-lead"}, "state": "APPROVED", "commit_id": "c0ffee4200000000000000000000000000000001", "submitted_at": "2026-10-29T16:10:00Z"},
+    {"user": {"login": "power-reviewer"}, "state": "CHANGES_REQUESTED", "commit_id": "c0ffee4200000000000000000000000000000002", "submitted_at": "2026-10-30T15:40:00Z"}
+  ],
+  "check_runs": [
+    {"name": "erc", "status": "completed", "conclusion": "success"},
+    {"name": "edagov-gates", "status": "completed", "conclusion": "failure"}
+  ],
+  "protection": {
+    "required_pull_request_reviews": {"required_approving_review_count": 2, "require_code_owner_reviews": true, "dismiss_stale_reviews": true},
+    "required_status_checks": {"contexts": ["erc", "edagov-gates"]},
+    "required_conversation_resolution": {"enabled": true},
+    "required_signatures": {"enabled": false}
+  }
+}

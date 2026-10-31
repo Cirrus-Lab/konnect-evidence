@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schemas.kicad.org/erc.v1.json",
+  "coordinate_units": "mm",
+  "date": "2026-10-30T13:55:02+0000",
+  "ignored_checks": [{"key": "lib_symbol_issues", "description": "Library symbol does not match the symbol in the library"}],
+  "included_severities": ["error", "warning"],
+  "kicad_version": "10.0.0",
+  "sheets": [
+    {"path": "/", "uuid_path": "/8c1f2a40-1111-4c3e-9a10-000000000001", "violations": []},
+    {"path": "/Power stage/", "uuid_path": "/8c1f2a40-1111-4c3e-9a10-000000000001/8c1f2a40-1111-4c3e-9a10-0000000000b1",
+     "violations": [
+       {"type": "power_pin_not_driven", "severity": "error", "description": "Input Power pin not driven by any Output Power pins",
+        "items": [{"uuid": "8c1f2a40-1111-4c3e-9a10-0000000000c1", "description": "Symbol U1 Pin 1 [VIN, Power input, Line]", "pos": {"x": 92.38, "y": 57.46}}],
+        "excluded": true, "comment": "VIN is supplied externally through J1; PWR_FLAG to be added in rev C (ADR-PWR-FLAG)"}
+     ]}
+  ],
+  "source": "buck-demo.kicad_sch"
+}

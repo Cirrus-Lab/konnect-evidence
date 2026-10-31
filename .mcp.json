@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "konnect": {
+      "command": "konnect",
+      "args": [],
+      "env": {
+        "KONNECT_GOVERNANCE": "auto",
+        "KONNECT_EDAGOV": "${CLAUDE_PLUGIN_ROOT}/governance/bin/edagov.py"
+      }
+    },
+    "edagov": {
+      "command": "${EDAGOV_PYTHON:-python3}",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/governance/bin/edagov-mcp.py"],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,12 @@
+Buck demo rev B - averaged control loop, small-signal AC
+.include models/ea.lib
+VREF ref 0 DC 0.8
+VOUTS vout 0 DC 3.3 AC 1
+R1 vout fb 31.6k
+R2 fb 0 10k
+XEA ref fb comp EA
+RC comp n1 20k
+CC n1 0 2.2n
+.ac dec 50 10 1meg
+.save v(comp) v(fb)
+.end

@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# edagov governance MCP server on stdio (used by the plugin's .mcp.json).
+HERE="$(cd "$(dirname "$0")/.." && pwd)"
+PYTHONPATH="$HERE/src${PYTHONPATH:+:$PYTHONPATH}" exec "${PYTHON:-python3}" -m edagov mcp

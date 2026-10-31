@@ -1,0 +1,8 @@
+{
+  "name": "konnect-evidence",
+  "owner": {"name": "HWIT"},
+  "metadata": {"description": "Evidence-governed KiCad design agent: Konnect MCP tools plus edagov change windows, ledger, gates and dashboard.", "version": "0.13.0-evidence.1"},
+  "plugins": [
+    {"name": "konnect-evidence", "source": "./", "description": "Konnect KiCad MCP server combined with edagov evidence governance."}
+  ]
+}

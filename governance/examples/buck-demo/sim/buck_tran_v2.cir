@@ -1,0 +1,14 @@
+Buck demo rev B - switching transient, ideal switch (attempt 2: finite edges, relaxed reltol)
+.include models/ea.lib
+VIN vin 0 DC 12
+S1 vin sw ctl 0 SWMOD
+D1 0 sw DMOD
+L1 sw vout 4.7u
+C2 vout 0 47u IC=0
+RLOAD vout 0 1.1
+VCTL ctl 0 PULSE(0 1 0 20n 20n 0.53u 2u)
+.model SWMOD SW(Ron=10m Roff=10meg Vt=0.5 Vh=0.05)
+.model DMOD D(Is=1e-12 N=1.05 Rs=5m)
+.options reltol=0.003 method=gear
+.tran 10n 400u UIC
+.end

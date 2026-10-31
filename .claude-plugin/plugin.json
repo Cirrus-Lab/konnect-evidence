@@ -1,0 +1,30 @@
+{
+  "name": "konnect-evidence",
+  "version": "0.13.0-evidence.1",
+  "description": "Konnect KiCad MCP server (228 design tools) combined with edagov evidence governance: every design edit needs a reviewer-approved change window and is recorded in a hash-chained ledger; ERC/DRC/ngspice runs carry provenance; gates, BOM and release-manifest checks, audit trail and review dashboard.",
+  "author": {
+    "name": "HWIT (fork of Konnect by mixelpixx and contributors)"
+  },
+  "license": "AGPL-3.0-only",
+  "homepage": "https://github.com/mixelpixx/Konnect",
+  "keywords": [
+    "kicad",
+    "eda",
+    "pcb",
+    "schematic",
+    "mcp",
+    "ngspice",
+    "design-review",
+    "evidence",
+    "traceability"
+  ],
+  "skills": [
+    "./skills",
+    "./crates/konnect/assets/skills"
+  ],
+  "agents": [
+    "./crates/konnect/assets/agents/kicad-design-review-agent.md",
+    "./crates/konnect/assets/agents/kicad-schematic-build-agent.md"
+  ],
+  "mcpServers": "./.mcp.json"
+}

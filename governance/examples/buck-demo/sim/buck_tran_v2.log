@@ -1,0 +1,9 @@
+Circuit: buck demo rev b - switching transient, ideal switch (attempt 2: finite edges, relaxed reltol)
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Initial Transient Solution
+--------------------------
+No. of Data Rows : 41873
+binary raw file "output.raw"
+ngspice-44.2 done

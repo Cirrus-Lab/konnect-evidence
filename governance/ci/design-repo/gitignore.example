@@ -1,0 +1,8 @@
+# KiCad local-only files
+*.kicad_prl
+fp-info-cache
+*.lck
+*-backups/
+# edagov: keep .edagov/ under version control; ignore only scratch output
+snapshots/
+dashboard.html

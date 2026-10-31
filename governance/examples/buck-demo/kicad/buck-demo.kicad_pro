@@ -1,0 +1,10 @@
+{
+  "meta": {"filename": "buck-demo.kicad_pro", "version": 3},
+  "text_variables": {"BOARD_REV": "B"},
+  "net_settings": {"classes": [
+    {"name": "Default", "clearance": 0.2, "track_width": 0.25},
+    {"name": "POWER_SW", "clearance": 0.3, "track_width": 1.0}
+  ]},
+  "erc": {"rule_severities": {"pin_not_driven": "error", "lib_symbol_issues": "ignore"}},
+  "board": {"design_settings": {"rule_severities": {"silk_over_copper": "warning"}}}
+}

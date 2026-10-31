@@ -31,6 +31,10 @@ Never carry one approval over to another window, and never infer approval from s
 
 Scope the files to everything the call names, not only what it changes. Governance treats every path argument as a target, so `update_pcb_from_schematic` needs the root `.kicad_sch` in the window's `files` as well as the board, even though it only reads the schematic.
 
+Governance also reads any argument containing `/` as a path, including KiCad net names. Assigning a hierarchical net such as `/RF synthesis/ROD_E1` to a net class is refused as "outside the governed root". Assign it by a slash-free wildcard instead (`*ROD_E1`). Check what each pattern matches against the board's net list first, because `*CLK?` also catches `Net-(J3-SWCLK)`. Confirm the result with `get_netclasses`. Refused calls do not use up the window's call budget.
+
+Net classes and board minimums live in `.kicad_pro`, and Konnect writes them only while KiCad is fully closed. Ask the person to close KiCad, then check that no `*.lck` file remains next to the project.
+
 ## 3. Edit
 
 Make the change with Konnect tools. If a call comes back as an error of kind `plan_blocked` with a governance reason:

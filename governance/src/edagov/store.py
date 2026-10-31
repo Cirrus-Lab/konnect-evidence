@@ -19,7 +19,7 @@ from pathlib import Path
 from . import permissions, schema
 from .audit import AuditLog
 from .policy import DEFAULT_POLICY
-from .util import now_iso, obj_hash, read_json, write_json, new_id
+from .util import now_iso, obj_hash, plain_path, read_json, write_json, new_id
 
 STORE_DIR = ".edagov"
 
@@ -30,7 +30,7 @@ class StoreError(RuntimeError):
 
 class Store:
     def __init__(self, root: str | Path = "."):
-        self.root = Path(root).resolve()
+        self.root = plain_path(root)
         self.dir = self.root / STORE_DIR
         if not (self.dir / "design.json").exists():
             raise StoreError(f"no evidence store at {self.dir}; run `edagov init` first")

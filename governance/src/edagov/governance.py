@@ -29,7 +29,7 @@ import os
 from pathlib import Path
 
 from . import permissions
-from .util import file_hash, new_id, now_iso, obj_hash, parse_iso, write_json
+from .util import file_hash, new_id, now_iso, obj_hash, parse_iso, plain_path, write_json
 from .vocab import TOOL_EFFECTS
 
 DEFAULTS = {
@@ -184,7 +184,7 @@ def _covers(w: dict, tool: str, toolset: str | None) -> bool:
 
 def _rel(store, p: str) -> str | None:
     try:
-        return Path(p).resolve().relative_to(store.root).as_posix()
+        return plain_path(p).relative_to(store.root).as_posix()
     except (ValueError, OSError):
         return None
 

@@ -18,9 +18,9 @@ In a governed design Konnect refuses every design-changing tool unless a change 
 Call `gov_window_request` with `scope`, `reason` (what and why, in one sentence), `issue` when one exists, `files`, `hours` and `max_calls`. Then tell the user, in one short message:
 - the window ID and its scope;
 - who may approve it (a design_reviewer or release_approver other than the requester);
-- the command they run: `edagov konnect window approve WIN-…`.
+- the command they run: `edagov konnect window approve WIN-…`, or, when they use the review console (`edagov-review.py`, started in their own terminal as the reviewer), that the window is waiting there.
 
-Do not approve it yourself, and do not change `EDAGOV_ACTOR` to someone else. Wait for the user to confirm approval, then check with `gov_window_status`.
+Do not approve it yourself, and do not change `EDAGOV_ACTOR` to someone else. Never start the review console as the reviewer, read its decision PIN, or call its decision endpoint. Wait for the user to confirm approval, then check with `gov_window_status`.
 
 ## 3. Edit
 

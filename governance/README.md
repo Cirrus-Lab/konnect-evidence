@@ -1,9 +1,10 @@
 # governance/ — edagov
 
-The evidence-governance half of Konnect-Evidence. Python 3.10+, standard library only.
+The evidence-governance half of Konnect-Evidence. Python 3.10+, standard library only (the optional review console needs Flask).
 
 - `src/edagov/` — evidence store, audit chain, KiCad/ngspice runners with provenance, BOM and manufacturing checks, gates, GitHub sync, connector governance, snapshots, dashboard, **`governance.py`** (Konnect change windows, authorize/record, call ledger) and **`mcp_server.py`** (`gov_*` MCP tools).
-- `bin/` — launchers: `edagov`, `edagov-mcp` (POSIX); `edagov.py`, `edagov-mcp.py` (any OS); `.cmd` variants.
+- `bin/` — launchers: `edagov`, `edagov-mcp` (POSIX); `edagov.py`, `edagov-mcp.py`, `edagov-review.py` (any OS); `.cmd` variants.
+- `src/edagov/review/` — review console: a local Flask web UI (loopback only) showing change windows, gates and the Konnect call ledger as a live workflow, where a reviewer approves or rejects windows. Install Flask (`pip install flask`, or the `review` extra), then run it in your own terminal as the reviewer: `python bin/edagov-review.py --root <design> --actor <reviewer email>`. Each decision needs the PIN printed in that terminal and the window ID typed back; decisions go through the same `approve_window` as `edagov konnect window approve`.
 - `tests/` — `python -m pytest` (uses fake `kicad-cli`/`ngspice` in `tests/fakes`).
 - `examples/buck-demo/` — a 12 V → 3.3 V design with reports, BOM, SPICE decks, X2 Gerbers; `build_demo.sh` walks the full workflow.
 - `ci/design-repo/` — GitHub Actions gate workflow, PR template, CODEOWNERS and issue template to copy into a design repository, plus `gitattributes.example`: copy it to `.gitattributes` so Windows and Linux checkouts hash the same design bytes.

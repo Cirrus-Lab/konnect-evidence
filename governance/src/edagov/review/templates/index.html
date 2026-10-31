@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf }}">
+  <title>edagov review</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='review.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <div class="brand-title">edagov review</div>
+        <div class="brand-sub" id="design-line">Loading…</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <label class="design-pick">
+        <span>Design</span>
+        <select id="root-select">
+          {% for i, name, path in roots %}<option value="{{ i }}" title="{{ path }}">{{ name }}</option>{% endfor %}
+        </select>
+      </label>
+      <div class="viewer" id="viewer"></div>
+      <div class="pill" id="ledger-badge"></div>
+      <div class="refresh" id="refresh" title="Refreshes every 3 s"></div>
+    </div>
+  </header>
+
+  <main>
+    <section id="queue-section">
+      <h2>Needs your decision</h2>
+      <div id="queue" class="queue"></div>
+    </section>
+
+    <section>
+      <h2>Gates</h2>
+      <div id="gates" class="gates"></div>
+      <div id="gate-detail" class="gate-detail" hidden></div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Change windows</h2>
+        <div class="legend">
+          <span class="dot s-requested"></span>Requested
+          <span class="dot s-approved"></span>Active
+          <span class="dot s-closed"></span>Closed
+          <span class="dot s-expired"></span>Expired
+          <span class="dot s-rejected"></span>Rejected
+        </div>
+      </div>
+      <div id="windows" class="windows"></div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Konnect call ledger</h2>
+        <div class="filters">
+          <select id="ledger-window"><option value="">All windows</option></select>
+          <label class="check"><input type="checkbox" id="ledger-deny"> Refusals only</label>
+        </div>
+      </div>
+      <ol id="ledger" class="ledger"></ol>
+    </section>
+  </main>
+
+  <dialog id="decide">
+    <form id="decide-form" method="dialog">
+      <h3 id="decide-title">Approve change window</h3>
+      <div id="decide-summary" class="decide-summary"></div>
+      <label>Decision PIN <small>(printed in the terminal that started this console)</small>
+        <input id="decide-pin" inputmode="numeric" autocomplete="off" maxlength="6" required></label>
+      <label>Type the window ID to confirm
+        <input id="decide-confirm" autocomplete="off" required></label>
+      <label>Note <small id="note-hint">(optional)</small>
+        <textarea id="decide-note" rows="2"></textarea></label>
+      <p id="decide-error" class="error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" id="decide-cancel" class="btn ghost">Cancel</button>
+        <button type="submit" id="decide-submit" class="btn primary">Approve</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="{{ url_for('static', filename='review.js') }}"></script>
+</body>
+</html>

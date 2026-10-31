@@ -15,7 +15,12 @@ from . import executor
 from .gitinfo import source_revision
 from .util import file_hash, new_id, now_iso, write_json
 
-NGSPICE_CANDIDATES = ["ngspice", "/opt/homebrew/bin/ngspice", "/usr/local/bin/ngspice"]
+NGSPICE_CANDIDATES = [
+    "ngspice", "/opt/homebrew/bin/ngspice", "/usr/local/bin/ngspice",
+    # Windows: the console build is ngspice_con.exe; C:\Spice64 is the location the
+    # official zip expects (its spinit loads code models from there).
+    "ngspice_con", r"C:\Spice64\bin\ngspice_con.exe", r"C:\Program Files\Spice64\bin\ngspice_con.exe",
+]
 
 # ngspice defaults (ngspice manual, .options): loosening any of these marks a run "altered_settings".
 NGSPICE_DEFAULTS = {"reltol": 1e-3, "abstol": 1e-12, "vntol": 1e-6, "chgtol": 1e-14, "gmin": 1e-12,
@@ -223,7 +228,7 @@ def run_ngspice(store, netlist, *, authorize: str | None, retry_of=None, validat
     run_id = new_id("run")
     rdir = store.run_dir(run_id)
     vrec = executor.run([cli, "-v"], cwd=rdir, run_dir=rdir / "version")
-    vtxt = Path(vrec["logs"]["stdout"]).read_text(errors="replace")
+    vtxt = Path(vrec["logs"]["stdout"]).read_text(encoding="utf-8", errors="replace")
     vm = re.search(r"ngspice[- ]?(\d+[\w.]*)", vtxt, re.I)
     version = f"ngspice-{vm.group(1)}" if vm else (vtxt.strip().splitlines()[0] if vtxt.strip() else None)
     # Copy the netlist so the run is bound to an immutable input.
@@ -233,8 +238,8 @@ def run_ngspice(store, netlist, *, authorize: str | None, retry_of=None, validat
     cmd = [cli, "-b", "-o", str(log), "-r", str(raw), str(Path(netlist).resolve())]
     exec_rec = executor.run(cmd, cwd=Path(netlist).resolve().parent, run_dir=rdir, timeout=timeout,
                             inputs=[Path(man["netlist"])])
-    text = log.read_text(errors="replace") if log.exists() else ""
-    text += "\n" + Path(exec_rec["logs"]["stderr"]).read_text(errors="replace")
+    text = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
+    text += "\n" + Path(exec_rec["logs"]["stderr"]).read_text(encoding="utf-8", errors="replace")
     rc, fails, warns = classify_log(text, exec_rec["exit_code"], man)
     if exec_rec["status"] != "completed":
         rc, fails = "failed", fails + [f"process status: {exec_rec['status']}"]
@@ -257,7 +262,7 @@ def ingest_log(store, netlist, log_path, *, simulator="ngspice", version=None, e
     rdir = store.run_dir(run_id)
     copy = rdir / Path(log_path).name
     shutil.copy2(log_path, copy)
-    rc, fails, warns = classify_log(copy.read_text(errors="replace"), exit_code, man)
+    rc, fails, warns = classify_log(copy.read_text(encoding="utf-8", errors="replace"), exit_code, man)
     rec = _record(store, run_id=run_id, man=man, version=version, result_class=rc, fails=fails, warns=warns,
                   executed=False, exec_rec=None, log_copy=copy, raw=None,
                   authorization={"reason": "documentation-only ingestion", "actor": store.actor()[0]},

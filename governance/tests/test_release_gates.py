@@ -1,5 +1,6 @@
 """BOM, manufacturing manifest, gates, connectors, GitHub, claims, snapshots, dashboard."""
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -174,7 +175,7 @@ def test_snapshot_diff_and_dashboard(design, as_actor, tmp_path):
     d = snapshot.compare(snapshot.load(a["zip"]), snapshot.load(b["zip"]))
     assert any(x.startswith("run/") for x in d["added"])
     assert any(g["gate"] == "pcb" for g in d["gate_changes"])
-    html = render(design, tmp_path / "dash.html", diff=d).read_text()
+    html = render(design, tmp_path / "dash.html", diff=d).read_text(encoding="utf-8")
     assert "Documentation-only" in html and "aria-live" in html and 'role="tablist"' in html
     assert not claims.scan_text(html)
     assert b["manifest"]["read_only"] and b["manifest"]["caveats"]
@@ -187,10 +188,12 @@ def test_viewer_cannot_export(design, as_actor, tmp_path):
         snapshot.build(design, tmp_path)
 
 
+@pytest.mark.skipif(os.name == "nt", reason="build_demo.sh is a POSIX shell walkthrough; on Windows the "
+                    "launchers and the Konnect protocol are covered by the other tests and the CI smoke job")
 def test_demo_script_end_to_end(tmp_path):
     root = Path(__file__).resolve().parents[1]
     r = subprocess.run(["sh", str(root / "examples/buck-demo/build_demo.sh"), str(tmp_path / "w")],
-                       capture_output=True, text=True, timeout=300)
+                       capture_output=True, text=True, encoding="utf-8", timeout=300)
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
     assert "Audit chain verified." in r.stdout
     assert (tmp_path / "w" / "dashboard.html").exists()

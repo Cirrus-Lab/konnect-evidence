@@ -8,7 +8,8 @@ from pathlib import Path
 
 def _git(root, *args) -> str | None:
     try:
-        r = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, timeout=10)
+        r = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=10)
     except (OSError, subprocess.TimeoutExpired):
         return None
     return r.stdout.strip() if r.returncode == 0 else None

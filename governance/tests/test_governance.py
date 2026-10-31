@@ -3,9 +3,9 @@ import io
 import json
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
+from conftest import child_env, launcher
 
 from edagov import gates, governance, kicad, mcp_server, permissions
 
@@ -119,18 +119,17 @@ def test_gate_flags_evidence_whose_inputs_changed(design, monkeypatch):
 
 
 def test_cli_kv_protocol_used_by_konnect(design, monkeypatch):
-    root = Path(__file__).resolve().parents[1]
-    env = {"EDAGOV_ACTOR": "designer@x", "PATH": "/usr/bin:/bin"}
-    cmd = [str(root / "bin" / "edagov"), "--root", str(design.root), "konnect", "authorize", "--tool", "add_wire",
+    env = child_env(EDAGOV_ACTOR="designer@x")
+    cmd = [*launcher("edagov"), "--root", str(design.root), "konnect", "authorize", "--tool", "add_wire",
            "--toolset", "sch_wiring", "--effect", "design_write", "--call-id", "K1", "--format", "kv",
            "--path", str(design.root / "kicad" / "buck-demo.kicad_sch")]
-    r = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", env=env)
     assert r.returncode == 0, r.stderr
     kv = dict(l.split("=", 1) for l in r.stdout.strip().splitlines())
     assert kv["decision"] == "deny" and kv["effect"] == "design_write"
-    r = subprocess.run([str(root / "bin" / "edagov"), "--root", str(design.root), "konnect", "record", "--tool",
+    r = subprocess.run([*launcher("edagov"), "--root", str(design.root), "konnect", "record", "--tool",
                         "run_drc", "--effect", "read", "--call-id", "K2", "--status", "ok", "--capture", "--format", "kv"],
-                       input='{"violation_count": 0}', capture_output=True, text=True, env=env)
+                       input='{"violation_count": 0}', capture_output=True, text=True, encoding="utf-8", env=env)
     assert r.returncode == 0, r.stderr
     assert dict(l.split("=", 1) for l in r.stdout.strip().splitlines())["evidence"].startswith("ART-KONNECT-RUN-DRC")
 
@@ -165,11 +164,11 @@ def test_mcp_server_protocol_and_tools(design, monkeypatch):
 
 
 def test_mcp_server_runs_as_subprocess(design):
-    root = Path(__file__).resolve().parents[1]
     msgs = [{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2026-07-28"}},
             {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "gov_status", "arguments": {"root": str(design.root)}}}]
-    r = subprocess.run([str(root / "bin" / "edagov-mcp")], input="\n".join(json.dumps(m) for m in msgs) + "\n",
-                       capture_output=True, text=True, env={"EDAGOV_ACTOR": "designer@x", "PATH": "/usr/bin:/bin"}, timeout=60)
+    r = subprocess.run(launcher("edagov-mcp"), input="\n".join(json.dumps(m) for m in msgs) + "\n",
+                       capture_output=True, text=True, encoding="utf-8", env=child_env(EDAGOV_ACTOR="designer@x"),
+                       timeout=60)
     lines = [json.loads(l) for l in r.stdout.splitlines()]
     assert lines[0]["result"]["protocolVersion"] == "2026-07-28"
     status = json.loads(lines[1]["result"]["content"][0]["text"])

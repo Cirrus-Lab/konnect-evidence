@@ -101,7 +101,7 @@ def load(path) -> dict:
             return json.loads(z.read(name))
     if p.is_dir():
         p = p / "manifest.json"
-    return json.loads(p.read_text())
+    return json.loads(p.read_text(encoding="utf-8"))
 
 
 def compare(a: dict, b: dict) -> dict:

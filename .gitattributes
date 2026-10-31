@@ -8,3 +8,14 @@ crates/konnect-sexp/tests/fixtures/** -text
 crates/konnect-core/tests/fixtures/** -text
 crates/konnect-ipc/tests/fixtures/** -text
 crates/konnect-schematic-editor/tests/fixtures/** -text
+
+# Shell scripts and the POSIX launchers need LF, or they fail on Windows
+# checkouts ("set: Illegal option -"). Batch files keep CRLF.
+*.sh text eol=lf
+governance/bin/edagov text eol=lf
+governance/bin/edagov-mcp text eol=lf
+*.cmd text eol=crlf
+
+# The governance demo design and its evidence are hashed by edagov: keep the
+# exact bytes on every platform so recorded input hashes match.
+governance/examples/buck-demo/** -text

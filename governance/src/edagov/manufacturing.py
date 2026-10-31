@@ -103,7 +103,7 @@ def classify(p: Path) -> tuple[str, dict]:
         return "position", {"format": "Placement CSV", "references": refs, **meta}
     if name.endswith(".csv") and "bom" in name:
         return "bom", {"format": "BOM CSV"}
-    if name.endswith(".xml") and "ipc-2581" in p.read_text(errors="replace")[:4096].lower():
+    if name.endswith(".xml") and "ipc-2581" in p.read_text(encoding="utf-8", errors="replace")[:4096].lower():
         return "ipc2581", {"format": "IPC-2581"}
     if ("odb" in name) and name.endswith((".tgz", ".zip", ".tar.gz")):
         return "odb", {"format": "ODB++ archive"}

@@ -1,0 +1,27 @@
+# Copy to .gitattributes in the design repository.
+#
+# edagov records SHA-256 hashes of design files, reports and simulation inputs,
+# and gates fail when those hashes no longer match ("changed since this run").
+# Git for Windows checks text out with CRLF by default, so without these rules a
+# Windows checkout and a Linux CI runner see different bytes for the same commit.
+# Keep the exact bytes everywhere.
+*.kicad_pro    -text
+*.kicad_prl    -text
+*.kicad_sch    -text
+*.kicad_pcb    -text
+*.kicad_sym    -text
+*.kicad_mod    -text
+*.kicad_dru    -text
+*.kicad_wks    -text
+*.kicad_jobset -text
+fp-lib-table   -text
+sym-lib-table  -text
+*.cir -text
+*.sp  -text
+*.net -text
+*.lib -text
+*.gbr -text
+*.gbrjob -text
+*.drl -text
+*.csv -text
+.edagov/** -text

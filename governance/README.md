@@ -6,7 +6,7 @@ The evidence-governance half of Konnect-Evidence. Python 3.10+, standard library
 - `bin/` — launchers: `edagov`, `edagov-mcp` (POSIX); `edagov.py`, `edagov-mcp.py` (any OS); `.cmd` variants.
 - `tests/` — `python -m pytest` (uses fake `kicad-cli`/`ngspice` in `tests/fakes`).
 - `examples/buck-demo/` — a 12 V → 3.3 V design with reports, BOM, SPICE decks, X2 Gerbers; `build_demo.sh` walks the full workflow.
-- `ci/design-repo/` — GitHub Actions gate workflow, PR template, CODEOWNERS and issue template to copy into a design repository.
+- `ci/design-repo/` — GitHub Actions gate workflow, PR template, CODEOWNERS and issue template to copy into a design repository, plus `gitattributes.example`: copy it to `.gitattributes` so Windows and Linux checkouts hash the same design bytes.
 
 How Konnect calls it: `../docs/EVIDENCE_GOVERNANCE.md`. Agent-facing guidance: `../skills/`.
 

@@ -34,7 +34,7 @@ class SyncError(RuntimeError):
 
 def _api(path: str):
     if shutil.which("gh"):
-        r = subprocess.run(["gh", "api", path], capture_output=True, text=True, timeout=60)
+        r = subprocess.run(["gh", "api", path], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
         if r.returncode == 0:
             return json.loads(r.stdout)
         err = (r.stderr or "").lower()
@@ -143,7 +143,11 @@ def sync(store, repo: str, number: int, *, from_json: str | None = None) -> dict
     corr = correlation_id()
     rid = f"GH-{repo.replace('/', '-').upper()}-PR{number}"
     try:
-        data = json.load(open(from_json)) if from_json else fetch(repo, number)
+        if from_json:
+            with open(from_json, encoding="utf-8") as fh:
+                data = json.load(fh)
+        else:
+            data = fetch(repo, number)
         info = interpret(data)
         sync_state = "partial" if info["partial"] else "synced"
         err = None

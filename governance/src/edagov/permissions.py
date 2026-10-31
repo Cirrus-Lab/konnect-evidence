@@ -55,7 +55,8 @@ def current_actor() -> tuple[str, bool]:
     actor = os.environ.get("EDAGOV_ACTOR")
     if not actor:
         try:
-            actor = subprocess.run(["git", "config", "user.email"], capture_output=True, text=True, timeout=5).stdout.strip()
+            actor = subprocess.run(["git", "config", "user.email"], capture_output=True, text=True,
+                                   encoding="utf-8", errors="replace", timeout=5).stdout.strip()
         except Exception:
             actor = ""
     verified = os.environ.get("EDAGOV_ACTOR_VERIFIED_BY") is not None  # set only by a verified integration (e.g. CI OIDC)

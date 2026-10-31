@@ -8,6 +8,7 @@ import pytest
 from conftest import child_env, launcher
 
 from edagov import gates, governance, kicad, mcp_server, permissions
+from edagov.store import Store
 
 
 def _window(design, as_actor, scope=("sch_wiring",), files=None, max_calls=5, approve=True):
@@ -32,6 +33,16 @@ def test_design_write_denied_without_window(design):
     assert "window request" in res["next_action"]
     assert governance.Ledger(design).entries()[-1]["decision"] == "deny"
     assert any(e["action"] == "denied:konnect.design_write" for e in design.audit.events())
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="verbatim \\\\?\\ paths are Windows-only")
+def test_verbatim_root_still_governs_files_inside(design, as_actor):
+    # Konnect canonicalizes on Windows and may pass --root as \\?\C:\...; files inside must stay inside.
+    w = _window(design, as_actor, files=["kicad/**"])
+    st = Store("\\\\?\\" + str(design.root))
+    assert st.root == design.root
+    res = _auth(st, call="CV")
+    assert res["decision"] == "allow" and res["window"] == w["id"], res["reason"]
 
 
 def test_requested_window_is_not_enough(design, as_actor):

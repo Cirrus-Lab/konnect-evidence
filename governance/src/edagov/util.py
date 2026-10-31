@@ -99,6 +99,17 @@ def correlation_id() -> str:
     return os.environ.get("EDAGOV_CORRELATION_ID") or f"COR-{uuid.uuid4().hex[:16]}"
 
 
+def plain_path(path: str | Path) -> Path:
+    """Resolve a path and drop a Windows verbatim prefix (\\\\?\\C:\\..., \\\\?\\UNC\\...), which callers such
+    as Rust's canonicalize emit; a verbatim path never compares equal to the plain spelling of the same file."""
+    s = str(Path(path).resolve())
+    if s.startswith("\\\\?\\UNC\\"):
+        s = "\\\\" + s[8:]
+    elif s.startswith("\\\\?\\"):
+        s = s[4:]
+    return Path(s)
+
+
 def read_json(path: str | Path):
     with open(path, "r", encoding="utf-8") as fh:
         return json.load(fh)

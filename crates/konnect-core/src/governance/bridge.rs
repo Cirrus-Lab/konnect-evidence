@@ -91,6 +91,10 @@ fn is_store_root(dir: &Path) -> bool {
 
 /// Walk up from each candidate path to the nearest directory holding
 /// `.edagov/design.json`; then fall back to `KONNECT_GOVERNANCE_ROOT`.
+///
+/// Paths are canonicalized with `dunce`: on Windows `std::fs::canonicalize`
+/// returns a verbatim `\\?\C:\…` path, which edagov then compares against the
+/// plain paths in the call and treats every design file as outside the root.
 pub fn find_store(candidates: &[String]) -> Option<PathBuf> {
     for c in candidates {
         let p = Path::new(c);
@@ -103,7 +107,7 @@ pub fn find_store(candidates: &[String]) -> Option<PathBuf> {
             if s.as_os_str().is_empty() {
                 None
             } else {
-                std::fs::canonicalize(&s).ok().or(Some(s))
+                dunce::canonicalize(&s).ok().or(Some(s))
             }
         });
         while let Some(dir) = cur {
@@ -395,6 +399,11 @@ mod tests {
         let sch = design.join("x.kicad_sch");
         std::fs::write(&sch, "(kicad_sch)").unwrap();
         let found = find_store(&[sch.display().to_string()]).expect("store found");
+        assert!(
+            !found.to_string_lossy().starts_with(r"\\?\"),
+            "edagov compares the root with plain paths, so it must not be verbatim: {}",
+            found.display()
+        );
         assert_eq!(
             std::fs::canonicalize(found).unwrap(),
             std::fs::canonicalize(base.join("repo")).unwrap()

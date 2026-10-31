@@ -29,6 +29,7 @@ base64.workspace = true
 sha2.workspace = true
 reqwest.workspace = true
 dirs.workspace = true
+dunce.workspace = true
 rusqlite.workspace = true
 usvg.workspace = true
 zip.workspace = true

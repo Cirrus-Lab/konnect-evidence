@@ -20,6 +20,8 @@ import hmac
 import os
 import secrets
 import sys
+import threading
+import webbrowser
 from pathlib import Path
 
 from flask import Flask, abort, jsonify, render_template, request
@@ -117,6 +119,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="design repository root holding .edagov/ (repeat for several designs)")
     ap.add_argument("--actor", help="identity to review and decide as (default: EDAGOV_ACTOR or git user.email)")
     ap.add_argument("--port", type=int, default=5077)
+    ap.add_argument("--no-browser", action="store_true", help="do not open the console in the default browser")
     a = ap.parse_args(argv)
     if a.actor:
         os.environ["EDAGOV_ACTOR"] = a.actor
@@ -129,6 +132,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"edagov review console  http://127.0.0.1:{a.port}/", flush=True)
     print(f"  deciding as: {actor}", flush=True)
     print(f"  decision PIN: {pin}   (shown only here; do not paste it into an AI session)", flush=True)
+    print("  keep this window open while you review; Ctrl+C stops the console", flush=True)
+    if not a.no_browser:
+        threading.Timer(1.0, webbrowser.open, args=(f"http://127.0.0.1:{a.port}/",)).start()
     create_app(roots, pin=pin).run(host="127.0.0.1", port=a.port, debug=False, use_reloader=False)
     return 0
 

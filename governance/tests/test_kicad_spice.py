@@ -48,6 +48,7 @@ def test_undocumented_exit_code_is_tool_error(design, monkeypatch):
 
 def test_missing_tool(design, monkeypatch):
     monkeypatch.setenv("KICAD_CLI", "/nonexistent/kicad-cli")
+    monkeypatch.setattr(kicad, "CLI_CANDIDATES", ["kicad-cli"])  # ignore a real KiCad install
     monkeypatch.setenv("PATH", "/nonexistent")
     with pytest.raises(executor.ToolMissing):
         kicad.run_check(design, "erc", design.root / "kicad", authorize="x")

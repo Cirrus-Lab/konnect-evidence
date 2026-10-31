@@ -63,7 +63,7 @@ Upstream behaviour is preserved: with no `.edagov/` store above a call's paths (
 
 | Item | Status |
 |---|---|
-| edagov + governance + MCP server | 49 Python tests pass (`cd governance && python -m pytest`) |
+| edagov + governance + MCP server | 51 Python tests (`cd governance && python -m pytest`), run in CI on Linux, macOS and Windows with Python 3.10 and 3.13; the POSIX demo walkthrough is skipped on Windows |
 | `effects.rs`, `bridge.rs` | 11 unit tests pass and clippy (`-D warnings`) is clean, compiled with rustc outside the workspace |
 | Rust bridge ↔ edagov | End-to-end harness: deny without window → allow inside approved window → changed files recorded → evidence captured → missing launcher is an error |
 | `mod.rs` and the `handler.rs` hook | Type-checked against stand-in types only. The full workspace (`cargo check/test/clippy`) could not be built in the authoring environment (no crates.io access); it runs in `.github/workflows/ci.yml` on the first push |

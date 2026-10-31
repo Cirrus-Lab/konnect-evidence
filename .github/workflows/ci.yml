@@ -64,14 +64,15 @@ jobs:
   # Konnect-Evidence: the edagov governance toolkit (Python) that the Rust
   # dispatch hook talks to. Its tests include the change-window protocol the
   # bridge relies on (`edagov konnect authorize|record --format kv`) and the
-  # stdio MCP server.
+  # stdio MCP server. Windows runs the full suite too: the tests wrap the
+  # fake tools in .cmd shims and use the .py launchers there.
   governance:
     name: Governance (Python)
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python: ["3.10", "3.13"]
     steps:
       - uses: actions/checkout@v7
@@ -85,9 +86,9 @@ jobs:
       - name: Secret scan
         run: python governance/bin/edagov.py scan-secrets governance/src skills docs
 
-  # The pytest suite drives POSIX shell launchers and fake tools; on Windows,
-  # smoke-test the cross-platform `.py` launcher and the decision protocol
-  # the Rust bridge parses.
+  # End-to-end smoke of the cross-platform `.py` launcher from PowerShell and
+  # the decision protocol the Rust bridge parses (the pytest suite runs on
+  # Windows in the governance job above).
   governance-windows:
     name: Governance (Windows smoke)
     runs-on: windows-latest

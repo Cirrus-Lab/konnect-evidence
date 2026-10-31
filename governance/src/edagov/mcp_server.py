@@ -22,6 +22,7 @@ import traceback
 from . import (__version__, bom, claims, connectors, gates, github, governance, inventory as inv_mod, kicad,
                manufacturing, records, snapshot, spice)
 from .store import Store
+from .util import utf8_stdio
 
 SUPPORTED_PROTOCOLS = ("2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")
 SERVER_INFO = {"name": "edagov", "title": "EDA evidence governance", "version": __version__}
@@ -417,6 +418,8 @@ def handle(msg: dict) -> dict | None:
 
 
 def serve(stdin=None, stdout=None) -> int:
+    if stdin is None and stdout is None:
+        utf8_stdio()
     stdin = stdin or sys.stdin
     stdout = stdout or sys.stdout
     for line in stdin:

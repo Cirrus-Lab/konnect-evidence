@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import sys
 import uuid
 from pathlib import Path
 
@@ -27,12 +28,34 @@ def parse_iso(value: str | None):
         return None
     try:
         v = value.replace("Z", "+00:00")
+        # Python < 3.11 rejects "+HHMM" offsets (KiCad report format); add the colon.
+        v = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", v)
         d = _dt.datetime.fromisoformat(v)
         if d.tzinfo is None:
             d = d.replace(tzinfo=_dt.timezone.utc)
         return d
     except ValueError:
         return None
+
+
+def utf8_stdio() -> None:
+    """Use UTF-8 and LF on this process's own stdio.
+
+    Windows defaults pipes to the ANSI code page and CRLF, which corrupts non-ASCII JSON
+    (MCP responses, ``--format kv`` output read by the Konnect bridge). Streams that were
+    replaced (tests, embedding) are left alone.
+    """
+    for name in ("stdin", "stdout", "stderr"):
+        stream = getattr(sys, name, None)
+        if stream is None or stream is not getattr(sys, f"__{name}__", None) or not hasattr(stream, "reconfigure"):
+            continue
+        try:
+            if name == "stdin":
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            else:
+                stream.reconfigure(encoding="utf-8", errors="backslashreplace", newline="\n")
+        except (ValueError, OSError):
+            pass
 
 
 def file_hash(path: str | Path, alg: str = HASH_ALG) -> str:

@@ -56,7 +56,7 @@ def locate_cli() -> str | None:
 def tool_version(cli: str, run_dir: Path) -> str | None:
     rec = executor.run([cli, "version"], cwd=run_dir, run_dir=run_dir / "version")
     try:
-        txt = Path(rec["logs"]["stdout"]).read_text().strip()
+        txt = Path(rec["logs"]["stdout"]).read_text(encoding="utf-8", errors="replace").strip()
     except OSError:
         return None
     return txt.splitlines()[0] if txt else None

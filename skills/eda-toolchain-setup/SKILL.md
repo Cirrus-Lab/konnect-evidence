@@ -32,7 +32,7 @@ The `konnect` MCP server is this repository's Rust workspace (fork of Konnect wi
 
 Enable KiCad's IPC API (Preferences → Plugins → Enable IPC API) for live board tools. Run `konnect status` to confirm the build and `konnect init --client claude` only if you also want Konnect's skills installed outside this plugin.
 
-The plugin's MCP configuration starts `konnect` with `KONNECT_GOVERNANCE=auto` and `KONNECT_EDAGOV` pointing at the bundled `governance/bin/edagov.py`. On Windows, Python must be reachable as `py` (python.org launcher) or set `KONNECT_PYTHON`. Set `KONNECT_GOVERNANCE_ROOT` to the design repository so live-board tools without a path argument are governed too.
+The plugin's MCP configuration starts `konnect` with `KONNECT_GOVERNANCE=auto` and `KONNECT_EDAGOV` pointing at the bundled `governance/bin/edagov.py`. On Windows, Python must be reachable as `py` (python.org launcher) or set `KONNECT_PYTHON`. The edagov MCP server starts with `${EDAGOV_PYTHON:-python3}`, and on Windows `python3` is usually the Microsoft Store alias, so set the user environment variable `EDAGOV_PYTHON=py` there. Set `KONNECT_GOVERNANCE_ROOT` to the design repository so live-board tools without a path argument are governed too.
 
 ## 4. Install ngspice
 
@@ -41,7 +41,7 @@ The plugin's MCP configuration starts `konnect` with `KONNECT_GOVERNANCE=auto` a
 | Ubuntu / Debian | `sudo apt install ngspice` |
 | Fedora | `sudo dnf install ngspice` |
 | macOS | `brew install ngspice` |
-| Windows | download the ngspice zip from ngspice.sourceforge.io, unzip, set `NGSPICE` to `...\Spice64\bin\ngspice_con.exe` |
+| Windows | download the 64-bit zip from ngspice.sourceforge.io and unzip it so that `C:\Spice64\bin\ngspice_con.exe` exists (the build loads its code models from `C:\Spice64`). edagov finds it there, in `C:\Program Files\Spice64` or as `ngspice_con` on PATH; anywhere else, set `NGSPICE` to the full path of `ngspice_con.exe` |
 
 LTspice and commercial simulators are not driven by edagov; run them yourself and ingest the log (`edagov ingest spice`).
 

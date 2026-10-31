@@ -20,7 +20,7 @@ from . import (bom, claims, connectors, executor, gates, github, inventory as in
 from .dashboard import render
 from . import governance
 from .store import Store, StoreError, dumps
-from .util import file_hash, new_id, now_iso, write_json
+from .util import file_hash, new_id, now_iso, utf8_stdio, write_json
 
 
 def _store(a) -> Store:
@@ -48,7 +48,7 @@ def cmd_doctor(a):
         if not exe:
             return None
         try:
-            r = subprocess.run([exe, *cmd[1:]], capture_output=True, text=True, timeout=30)
+            r = subprocess.run([exe, *cmd[1:]], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
             return (r.stdout or r.stderr).strip().splitlines()[0] if (r.stdout or r.stderr).strip() else exe
         except Exception as e:  # noqa: BLE001
             return f"error: {e}"
@@ -665,6 +665,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    utf8_stdio()
     p = build_parser()
     a = p.parse_args(argv)
     try:

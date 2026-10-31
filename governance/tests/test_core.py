@@ -1,5 +1,8 @@
 """Store, audit chain, schema and permission behaviour (Dashboard Spec §8–§9, acceptance criteria 9–10)."""
 import json
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -77,3 +80,24 @@ def test_store_requires_init(tmp_path):
     from edagov.store import StoreError
     with pytest.raises(StoreError):
         Store(tmp_path)
+
+
+def test_parse_iso_accepts_kicad_offsets():
+    # KiCad reports use "+0000"; datetime.fromisoformat rejects that before Python 3.11,
+    # which made ERC/DRC freshness "unknown" and blocked gates on 3.10.
+    from edagov.util import freshness, parse_iso
+    assert parse_iso("2026-10-30T13:55:02+0000").utcoffset().total_seconds() == 0
+    assert parse_iso("2026-10-30T13:55:02-0300").utcoffset().total_seconds() == -3 * 3600
+    assert parse_iso("2026-10-30T13:55:02Z") == parse_iso("2026-10-30T13:55:02+00:00")
+    assert freshness("2026-10-30T13:55:02+0000", None, now="2026-10-31T00:00:00Z") == "current"
+
+
+def test_stdio_is_utf8_with_lf(tmp_path):
+    # Windows defaults pipes to the ANSI code page and CRLF; MCP and --format kv output must not depend on it.
+    from conftest import child_env
+    src = Path(__file__).resolve().parents[1] / "src"
+    code = (f"import sys; sys.path.insert(0, {str(src)!r}); from edagov.util import utf8_stdio; "
+            "utf8_stdio(); print('\u00b1 2 % \u2264 30 mV')")
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, env=child_env(), timeout=60)
+    assert r.returncode == 0, r.stderr
+    assert r.stdout == "\u00b1 2 % \u2264 30 mV\n".encode("utf-8")

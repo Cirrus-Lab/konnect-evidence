@@ -73,7 +73,7 @@ def run(cmd: list[str], *, cwd: Path, run_dir: Path, timeout: int = 900, inputs:
         code, status = None, "timeout"
     except FileNotFoundError as e:
         code, status = None, "tool_missing"
-        err_log.write_text(str(e))
+        err_log.write_text(str(e), encoding="utf-8")
     duration = round(time.monotonic() - t0, 3)
     return {
         "command": cmd,

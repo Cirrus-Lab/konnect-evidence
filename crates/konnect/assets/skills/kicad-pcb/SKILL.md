@@ -100,6 +100,16 @@ If connection fails:
    - Set them with KiCad fully closed, or put constraints in the project's
      custom DRC rules file with `set_layer_constraints`; KiCad reads that file
      at DRC time.
+   - `set_layer_constraints` writes one clearance rule and one track-width
+     rule per copper layer, and those override the netclass clearance. Call
+     it once per copper layer. It clears pad-to-pad errors inside fine-pitch
+     footprints while the board stays open.
+   - It cannot lower a board-level minimum such as the minimum drill: a part
+     with small thermal vias still fails `drill_out_of_range` until
+     `set_design_rules` runs with KiCad closed, or a person changes Board
+     Setup → Constraints.
+   - Leave impedance-controlled widths unset until the fab and stackup are
+     chosen; the width follows the dielectric thickness.
 5. **Build missing footprints only from the manufacturer's drawing.**
    - Render the PDF page and read every dimension from the image; a
      dimension-letter table without its drawing is ambiguous.

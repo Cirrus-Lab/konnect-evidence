@@ -105,7 +105,7 @@ If connection fails:
      it once per copper layer. It clears pad-to-pad errors inside fine-pitch
      footprints while the board stays open.
    - It cannot lower a board-level minimum such as the minimum drill: a part
-     with small thermal vias still fails `drill_out_of_range` until
+     with small thermal vias still fails DRC with "drill out of range" until
      `set_design_rules` runs with KiCad closed, or a person changes Board
      Setup → Constraints.
    - Leave impedance-controlled widths unset until the fab and stackup are

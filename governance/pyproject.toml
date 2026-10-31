@@ -13,12 +13,17 @@ dependencies = []
 
 [project.optional-dependencies]
 test = ["pytest>=7"]
+review = ["flask>=3"]
 
 [project.scripts]
 edagov = "edagov.cli:main"
+edagov-review = "edagov.review.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"edagov.review" = ["templates/*.html", "static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -192,6 +192,15 @@ add_power_symbol(schematic, power_net, x, y, rotation?)
   instance of a repeated sheet (each node's own 5V, say) takes a local net
   label via `connect_to_net` instead — `power:+5V` there shorts all the
   instances' rails together.
+- **Rails KiCad 10 has no symbol for** (`VIN`, `+3V3_RF`, `VREF`, …): place
+  `power:+3V3` (or `power:VCC` for a non-positive-supply style), then set its
+  Value to the rail name with `batch_edit_schematic_components`. KiCad names
+  the net from the Value, so every such symbol on every sheet joins one net.
+  Confirm the result in the exported netlist.
+- A rail that no power output drives needs one `PWR_FLAG`, or ERC reports
+  "Input Power pin not driven". Examples: an input connector, a rail behind a
+  ferrite bead, or a resistor-divider reference. Put the flag on a wire end or
+  junction of that rail, never mid-segment.
 
 ---
 
@@ -308,6 +317,45 @@ Use the loop to catch what connectivity checks cannot. Completion requires
 coherent functional grouping, label-inclusive overlap inspection, clear signal
 flow, and page-boundary acceptance for every symbol, label, and note. Inspect
 the image itself; a successful render command is not visual acceptance.
+
+## Readable layout: field notes from a full four-sheet design
+
+These held on KiCad 10.0.8 with this Konnect build; re-check them on other versions.
+
+**Wires carry connectivity; labels only name nets.**
+- Join every pin on a sheet with wires.
+- Use global labels only for signals that leave the sheet, once per sheet.
+- To keep a meaningful net name, add one local label on that net.
+- Labels repeated across a sheet to connect pins ("labeled stubs") are hard to review, and a reviewer will ask for them to be replaced.
+- To enforce this, a design repository can keep a small read-only checker. Count local labels per sheet (more than one of a name is an error) and global labels per sheet (a name used on only one sheet is an error); treat rails drawn with labels as errors.
+
+**Text placement is the slow part. Render after each change and look at the image.**
+- Field rotation is relative to the symbol: on a symbol placed at 90° or 270°, a field at rotation 90 renders horizontal and one at rotation 0 renders vertical.
+- Justification differs by library symbol: `Device:C` fields are left-justified at their x; `Device:R`, power symbols and most ICs are centred.
+- `rotate_schematic_component` turns the fields with the body. `reset_schematic_field_positions` puts them back on the library anchors, after which they often need moving off neighbouring parts.
+- Long values (crystals, cables) rarely fit near the part. A short Value plus the full part number in a hidden `MPN` field reads better, and keeps the information for the BOM.
+
+**Mirroring is only available at placement.**
+- `add_schematic_component` takes `mirror: "x" | "y"`; a placed part cannot be mirrored.
+- To flip a connector or IC so its signals face the right way:
+  1. Read the part's fields with `get_schematic_component`.
+  2. Delete it.
+  3. Re-add it mirrored with the same `reference`, `value` and `footprint`.
+  4. Re-add any custom fields.
+
+**Pin numbers move when you re-orient a two-terminal part.**
+- Turning a resistor by 180° swaps which pin lands on which wire. The circuit is equivalent, but the pad-to-net map changes.
+- If the change is meant to be connectivity-neutral, rotate the part a further 180° so pin 1 keeps its original net, then prove it with the netlist diff below.
+
+**Prove "no connectivity change" with a netlist diff, not by eye.**
+- Export the netlist before and after with `kicad-cli sch export netlist --format kicadxml`.
+- Compare each net as its set of `ref.pin` nodes, and compare net names separately.
+- Removing labels drops the net names they carried; restore them with one local label per net.
+
+**ERC exclusions do not survive in files written by Konnect.**
+- Konnect-written symbol instances carry no per-pin UUIDs, so KiCad assigns new ones on every load, and a serialized exclusion in `.kicad_pro` never matches again.
+- For an intentional finding (for example a load switch's quick-discharge pin tied to its output), record it as a design decision in the evidence store (edagov's record-decision tool), and ask a person to apply the exclusion in the KiCad ERC dialog.
+- Do not change the project-wide pin-conflict matrix to silence one finding.
 
 ## Evidence and completion gate
 

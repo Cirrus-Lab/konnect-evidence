@@ -48,6 +48,93 @@ If connection fails:
 - Tell the user to open KiCAD and load the project
 - The board (.kicad_pcb) must be open in the PCB editor
 - KiCAD's IPC API must be enabled (default in KiCAD 8+)
+- On Windows the API is often off, and Konnect only looks for the endpoint when
+  it starts. See the `eda-toolchain-setup` skill: enable the API, then restart
+  the MCP client.
+
+### Starting a board from the schematic (field notes, KiCad 10.0.8)
+
+1. **Set up the board while it is closed.** `add_layer` and
+   `add_board_outline` edit the saved file when no KiCad holds the board, so
+   set the copper layers and the Edge.Cuts outline before the user opens the
+   board. Use a plain rectangle (no rounded corners): `score_placement` can
+   only prove containment against an axis-aligned rectangle.
+2. **Have the user open the board in the PCB editor, then dry-run the sync.**
+   `update_pcb_from_schematic` only applies to a live board.
+   - A `GetOpenDocuments … AS_UNHANDLED` error straight after opening means
+     the editor is still registering; retry once.
+   - Symbols with no footprint are reported as unassigned and do not block the
+     sync.
+   - A footprint with custom-shape pads (for example
+     `Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm`) cannot be placed
+     through KiCad 10's typed IPC path. That conflict blocks the whole plan.
+     Swap to the rectangular-pad variant with the same pitch and pads
+     (`…_Open_Pad1.0x1.5mm`) through a schematic edit, then dry-run again.
+3. **Apply with the dry run's revision as `expected_plan_revision`, then
+   save.** The apply is a single
+   KiCad undo commit (Ctrl+Z reverses all of it). It lives only in the editor
+   until you call `save_project`; afterwards, check that the file on disk
+   contains the footprints.
+   - Prove the sync with a DRC run that includes schematic parity
+     (`kicad-cli pcb drc --schematic-parity --format json`). Missing or extra
+     footprints and net mismatches are real failures.
+   - Expect some noise right after a sync. Field mismatches (Description,
+     Datasheet, custom fields such as MPN) appear because the sync carries
+     pad nets but not every symbol field. Library-mismatch warnings appear on
+     footprints placed over IPC. None of these mean the sync failed.
+   - Read every clearance error's two items before blaming the staging
+     stack. Errors between two pads of the *same* footprint (fine-pitch
+     MSOP/VSSOP/0201 pads 0.15 mm apart against KiCad's default 0.2 mm
+     clearance) survive placement: they are a design-rule setting, fixed by
+     setting clearance to the fab's capability, not by moving parts.
+   - A BOM-attribute mismatch is real: the library footprint (test points,
+     Tag-Connect pads, solder jumpers, bare cable pads) is excluded from the
+     BOM while the symbol is not. Fix the schematic symbol, not the board.
+   - When parts are added in a later sync (footprints built after the first
+     one), the dry run lists only those parts as additions; the placed parts
+     are left where they are.
+4. **Keep design rules out of the live session.**
+   - `set_design_rules` and `set_predefined_sizes` write `.kicad_pro`.
+     `set_design_rules` refuses while the board is open, and an open KiCad
+     project manager can rewrite `.kicad_pro` from memory on close.
+   - Set them with KiCad fully closed, or put constraints in the project's
+     custom DRC rules file with `set_layer_constraints`; KiCad reads that file
+     at DRC time.
+   - `set_layer_constraints` writes one clearance rule and one track-width
+     rule per copper layer, and those override the netclass clearance. Call
+     it once per copper layer. It clears pad-to-pad errors inside fine-pitch
+     footprints while the board stays open.
+   - It cannot lower a board-level minimum such as the minimum drill: a part
+     with small thermal vias still fails DRC with "drill out of range" until
+     `set_design_rules` runs with KiCad closed, or a person changes Board
+     Setup → Constraints.
+   - Leave impedance-controlled widths unset until the fab and stackup are
+     chosen; the width follows the dielectric thickness.
+5. **Build missing footprints only from the manufacturer's drawing.**
+   - Render the PDF page and read every dimension from the image; a
+     dimension-letter table without its drawing is ambiguous.
+   - Record the drawing's document number and revision in the footprint
+     description.
+   - If the datasheet names a different case style from the design document,
+     record the correction as a decision.
+   - Never estimate a pad from a photo or a similar part.
+6. **Place from a written plan, then apply it in one batch.**
+   - Read each footprint's courtyard from the board file, not from the
+     design document: a document's placement figure often uses estimated or
+     body-only boxes, and real courtyards (gull-wing pad rows, clips holding a
+     rod) are larger, so parts drawn touching in the figure overlap on the
+     board.
+   - Check where each footprint's origin is. Most are centred, but connector
+     and wire-pad footprints often put the origin on pad 1, so a part placed
+     by its drawn centre lands half its length off.
+   - Write the target positions as a script that checks courtyard overlaps,
+     edge clearance and keep-out areas before any tool call. Apply them with
+     one `set_component_placements` call (one undo step), then
+     `save_project`.
+   - Verify with `score_placement` (verdict and decoupling distances) and a
+     KiCad DRC run. Re-check every distance rule from the design document
+     against the real courtyards; a rule that passed on estimated boxes can
+     fail on real ones.
 
 ---
 

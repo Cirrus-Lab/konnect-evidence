@@ -15,7 +15,7 @@ jobs:
       EDAGOV_EXECUTION: "allow:ci real-tool validation"
       EDAGOV_ACTOR: "ci@github-actions"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install KiCad 10 and ngspice
         run: |
           sudo add-apt-repository --yes ppa:kicad/kicad-10.0-releases

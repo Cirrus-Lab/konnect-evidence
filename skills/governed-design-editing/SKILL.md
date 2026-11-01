@@ -29,6 +29,11 @@ If the approver decides in chat and tells you to record their decision, you may 
 
 Never carry one approval over to another window, and never infer approval from silence.
 
+"Work without stopping" or "I won't be here" doesn't approve windows either.
+- Before a long run, check the open window's `expires_at`.
+- Request the next window early, while the person can still approve it.
+- When a window expires with no approval waiting, stop editing. Use the rest of the time for read-only work (plans, documentation, checks), and leave the requested window ID for the person.
+
 Scope the files to everything the call names, not only what it changes. Governance treats every path argument as a target, so `update_pcb_from_schematic` needs the root `.kicad_sch` in the window's `files` as well as the board, even though it only reads the schematic.
 
 Builds without the fix in Cirrus-Lab/konnect-evidence#16 read any argument containing `/` as a path, including KiCad net names. On those builds, assigning a hierarchical net such as `/RF synthesis/ROD_E1` to a net class is refused as "outside the governed root". If you see that refusal, assign the net by a slash-free wildcard instead (`*ROD_E1`). Check what each pattern matches against the board's net list first, because `*CLK?` also catches `Net-(J3-SWCLK)`. Confirm the result with `get_netclasses`. Refused calls do not use up the window's call budget.

@@ -135,6 +135,28 @@ If connection fails:
      KiCad DRC run. Re-check every distance rule from the design document
      against the real courtyards; a rule that passed on estimated boxes can
      fail on real ones.
+7. **Route by coordinates, topology first.** `route_trace` and `add_via`
+   take exact points, so plan every route on paper before calling them.
+   - Get absolute pad centres and sizes for the whole region in one pass
+     from the saved board, rather than one `get_component_pads` call per
+     part.
+   - Find trapped pins before routing. A trace run down one side of a
+     SC-70 or SOT-23-6 to a part below it closes off that side's middle and
+     lower pins. Exit those under the body, between the pad columns, or
+     through a via.
+   - Check that rows of parts are in the same order as their destinations.
+     When two chains end at targets stacked in the opposite order (an upper
+     row feeding the lower mixer), one of them has to change layer.
+   - Before each segment, work out its edge-to-edge gap to every nearby pad,
+     via and track against the clearance rule. Route the impedance-
+     controlled nets first, on the layer next to the ground plane, and give
+     the short hops to the outer layer to the less critical net.
+   - Leave escape room for the nets still to come. A trace run under a
+     mixer's port row can block that row's last pin.
+   - After each stage, save and run DRC with zones refilled (`run_drc` with
+     `refill_zones` and `sync_live_board`, or
+     `kicad-cli pcb drc --refill-zones`). Without a refill, vias into the
+     planes still show as unconnected.
 
 ---
 

@@ -65,11 +65,11 @@ If connection fails:
      the editor is still registering; retry once.
    - Symbols with no footprint are reported as unassigned and do not block the
      sync.
-   - A footprint with custom-shape pads (for example
-     `Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm`) cannot be placed
-     through KiCad 10's typed IPC path. That conflict blocks the whole plan.
-     Swap to the rectangular-pad variant with the same pitch and pads
-     (`…_Open_Pad1.0x1.5mm`) through a schematic edit, then dry-run again.
+   - A footprint with custom-shape pads (for example the rounded-pad solder
+     jumpers in the Jumper library) cannot be placed through KiCad 10's typed
+     IPC path. That conflict blocks the whole plan. Swap to the
+     rectangular-pad variant with the same pitch and pads through a schematic
+     edit, then dry-run again.
 3. **Apply with the dry run's revision as `expected_plan_revision`, then
    save.** The apply is a single
    KiCad undo commit (Ctrl+Z reverses all of it). It lives only in the editor
@@ -157,6 +157,40 @@ If connection fails:
      `refill_zones` and `sync_live_board`, or
      `kicad-cli pcb drc --refill-zones`). Without a refill, vias into the
      planes still show as unconnected.
+8. **Autoroute the bulk when `export_specctra_dsn` cannot take the board.**
+   Hand routing a dense board takes hundreds of calls, so autoroute it.
+   `export_specctra_dsn` only accepts two-layer boards with no tracks, vias,
+   zones or custom DRC rules. For anything else, this flow keeps every edit
+   inside Konnect:
+   1. Save, then export a DSN with KiCad's own Python. Run
+      `pcbnew.ExportSpecctraDSN(pcbnew.LoadBoard(board), out)` with the
+      `python` in KiCad's `bin` folder. It only reads the board.
+   2. Edit the DSN copy:
+      - mark existing wiring `(type protect)`;
+      - add track and via keep-out rectangles for copper keep-outs;
+      - shrink the boundary so the clearance adds up to the copper-to-edge
+        rule;
+      - split overlapping plane polygons on one layer;
+      - give nets that reach fine-pitch pins a class narrower than the power
+        class.
+   3. Run the Freerouting jar headless:
+      `java -jar freerouting.jar --gui.enabled=false -de job.dsn -do job.ses`.
+      Run it from a scratch directory, because it writes logs into the
+      working directory. Freerouting 2.5.0 needs Java 25. Its native CLI
+      build crashes on a GraalVM serialization error and then hangs.
+   4. Turn the session's new wires and vias into `route_trace` and `add_via`
+      calls. Skip anything marked protect and anything that already exists.
+   5. Before any call, add those tracks and vias to a scratch copy of the
+      board, with its project and custom-rules files, and run
+      `kicad-cli pcb drc --refill-zones` on the copy. Drop or fix what it
+      flags: Freerouting sometimes narrows a track below the board minimum.
+      A self-written clearance check that treats rounded pads as rectangles
+      over-reports.
+   6. Apply, save, run DRC with zones refilled, commit. Each segment is one
+      governed call, so size the change window to match.
+
+   Route the pins of a fine-pitch QFN before the nets that pass near it. A
+   bus routed along a QFN's edge can close off several of its pins.
 
 ---
 

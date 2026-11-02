@@ -65,11 +65,11 @@ If connection fails:
      the editor is still registering; retry once.
    - Symbols with no footprint are reported as unassigned and do not block the
      sync.
-   - A footprint with custom-shape pads (for example
-     `Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm`) cannot be placed
-     through KiCad 10's typed IPC path. That conflict blocks the whole plan.
-     Swap to the rectangular-pad variant with the same pitch and pads
-     (`…_Open_Pad1.0x1.5mm`) through a schematic edit, then dry-run again.
+   - A footprint with custom-shape pads (for example the rounded-pad solder
+     jumpers in the Jumper library) cannot be placed through KiCad 10's typed
+     IPC path. That conflict blocks the whole plan. Swap to the
+     rectangular-pad variant with the same pitch and pads through a schematic
+     edit, then dry-run again.
 3. **Apply with the dry run's revision as `expected_plan_revision`, then
    save.** The apply is a single
    KiCad undo commit (Ctrl+Z reverses all of it). It lives only in the editor
@@ -135,6 +135,81 @@ If connection fails:
      KiCad DRC run. Re-check every distance rule from the design document
      against the real courtyards; a rule that passed on estimated boxes can
      fail on real ones.
+7. **Route by coordinates, topology first.** `route_trace` and `add_via`
+   take exact points, so plan every route on paper before calling them.
+   - Get absolute pad centres and sizes for the whole region in one pass
+     from the saved board, rather than one `get_component_pads` call per
+     part.
+   - Find trapped pins before routing. A trace run down one side of a
+     SC-70 or SOT-23-6 to a part below it closes off that side's middle and
+     lower pins. Exit those under the body, between the pad columns, or
+     through a via.
+   - Check that rows of parts are in the same order as their destinations.
+     When two chains end at targets stacked in the opposite order (an upper
+     row feeding the lower mixer), one of them has to change layer.
+   - Before each segment, work out its edge-to-edge gap to every nearby pad,
+     via and track against the clearance rule. Route the impedance-
+     controlled nets first, on the layer next to the ground plane, and give
+     the short hops to the outer layer to the less critical net.
+   - Leave escape room for the nets still to come. A trace run under a
+     mixer's port row can block that row's last pin.
+   - After each stage, save and run DRC with zones refilled (`run_drc` with
+     `refill_zones` and `sync_live_board`, or
+     `kicad-cli pcb drc --refill-zones`). Without a refill, vias into the
+     planes still show as unconnected.
+8. **Autoroute the bulk when `export_specctra_dsn` cannot take the board.**
+   Hand routing a dense board takes hundreds of calls, so autoroute it.
+   `export_specctra_dsn` only accepts two-layer boards with no tracks, vias,
+   zones or custom DRC rules. For anything else, this flow keeps every edit
+   inside Konnect:
+   1. Save, then export a DSN with KiCad's own Python. Run
+      `pcbnew.ExportSpecctraDSN(pcbnew.LoadBoard(board), out)` with the
+      `python` in KiCad's `bin` folder. It only reads the board.
+   2. Edit the DSN copy:
+      - mark existing wiring `(type protect)`;
+      - add track and via keep-out rectangles for copper keep-outs;
+      - shrink the boundary so the clearance adds up to the copper-to-edge
+        rule;
+      - split overlapping plane polygons on one layer;
+      - give nets that reach fine-pitch pins a class narrower than the power
+        class.
+   3. Run the Freerouting jar headless:
+      `java -jar freerouting.jar --gui.enabled=false -de job.dsn -do job.ses`.
+      Run it from a scratch directory, because it writes logs into the
+      working directory. Freerouting 2.5.0 needs Java 25. Its native CLI
+      build crashes on a GraalVM serialization error and then hangs.
+   4. Turn the session's new wires and vias into `route_trace` and `add_via`
+      calls. Skip anything marked protect and anything that already exists.
+   5. Before any call, add those tracks and vias to a scratch copy of the
+      board, with its project and custom-rules files, and run
+      `kicad-cli pcb drc --refill-zones` on the copy. Drop or fix what it
+      flags: Freerouting sometimes narrows a track below the board minimum.
+      A self-written clearance check that treats rounded pads as rectangles
+      over-reports.
+   6. Apply, save, run DRC with zones refilled, commit. Each segment is one
+      governed call, so size the change window to match.
+
+   Route the pins of a fine-pitch QFN before the nets that pass near it. A
+   bus routed along a QFN's edge can close off several of its pins.
+
+   Konnect cannot remove a via: `delete_trace` and `modify_trace` take track
+   segments only. Never apply part of a net that ends in a via beside a
+   fine-pitch pin field. If the rest of that net fails, the stray via stays,
+   and it can block a neighbouring pin's only escape until someone deletes it
+   in KiCad.
+
+   Freerouting does not see outer-layer pours once they are dropped from the
+   DSN, so it tries to fan every ground pad out to the plane. Keep its signal
+   copper, then close the ground gaps from KiCad's own view: refill a scratch
+   copy and put one stitching via in each pour fragment that has none.
+
+   The starved-thermal check counts an extra spoke only when it is a straight,
+   single-segment track from the pad into the pour. A diagonal or two-segment
+   stub that ends in the same pour is not counted.
+
+   For a pad boxed in on every side by other nets' tracks, a via inside the
+   pad (0.45 mm pad, 0.2 mm drill) is often the only connection. Tell the fab:
+   ask for plugged vias, or accept some solder wicking on small ground pads.
 
 ---
 

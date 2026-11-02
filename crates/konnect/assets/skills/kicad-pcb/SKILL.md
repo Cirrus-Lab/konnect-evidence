@@ -192,6 +192,25 @@ If connection fails:
    Route the pins of a fine-pitch QFN before the nets that pass near it. A
    bus routed along a QFN's edge can close off several of its pins.
 
+   Konnect cannot remove a via: `delete_trace` and `modify_trace` take track
+   segments only. Never apply part of a net that ends in a via beside a
+   fine-pitch pin field. If the rest of that net fails, the stray via stays,
+   and it can block a neighbouring pin's only escape until someone deletes it
+   in KiCad.
+
+   Freerouting does not see outer-layer pours once they are dropped from the
+   DSN, so it tries to fan every ground pad out to the plane. Keep its signal
+   copper, then close the ground gaps from KiCad's own view: refill a scratch
+   copy and put one stitching via in each pour fragment that has none.
+
+   The starved-thermal check counts an extra spoke only when it is a straight,
+   single-segment track from the pad into the pour. A diagonal or two-segment
+   stub that ends in the same pour is not counted.
+
+   For a pad boxed in on every side by other nets' tracks, a via inside the
+   pad (0.45 mm pad, 0.2 mm drill) is often the only connection. Tell the fab:
+   ask for plugged vias, or accept some solder wicking on small ground pads.
+
 ---
 
 ## Toolset Loading
